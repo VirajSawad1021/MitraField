@@ -39,7 +39,7 @@ def media_url(p: Project):
 def meta():
     return {"engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
-                       "video": config.MODEL_VEO, "tts": config.MODEL_TTS, "music": config.MODEL_MUSIC}}
+                       "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}", "music": config.MODEL_MUSIC}}
 
 
 def _cover(p):

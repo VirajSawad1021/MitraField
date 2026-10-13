@@ -139,9 +139,9 @@ function Title({ p, onSave }: { p: Project; onSave: (t: string) => void }) {
   const [seen, setSeen] = useState(p.title);
   if (p.title !== seen) { setSeen(p.title); setT(p.title); }   // follow server-side renames
   return (
-    <input value={t} onChange={(e) => setT(e.target.value)} onBlur={() => t.trim() && t !== p.title && onSave(t)}
-      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-      className="mt-2 w-full max-w-[640px] rounded-lg bg-transparent text-[28px] font-semibold tracking-tight text-ink outline-none hover:bg-white/60 focus:bg-white sm:text-[30px]" />
+    <textarea value={t} rows={1} onChange={(e) => setT(e.target.value.replace(/\n/g, ""))} onBlur={() => t.trim() && t !== p.title && onSave(t)}
+      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }}
+      className="mt-2 block w-full max-w-[760px] resize-none rounded-lg bg-transparent text-[28px] font-semibold leading-tight tracking-tight text-ink outline-none [field-sizing:content] hover:bg-white/60 focus:bg-white sm:text-[30px]" />
   );
 }
 
