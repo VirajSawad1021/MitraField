@@ -1,0 +1,21 @@
+# secrets
+.env
+.env.*
+.github_token
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# generated media and scratch
+data/
+scratch/
+server.log
+*.log
+
+# web
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/out/
