@@ -9,7 +9,8 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
   const path = usePathname();
   const nav = [
     { href: "/projects", label: "Projects" },
-    { href: "/#engines", label: "Engines" },
+    { href: "/studio", label: "Studio" },
+    { href: "/demo", label: "Demo" },
   ];
   return (
     <div className="min-h-screen bg-cream text-ink">
