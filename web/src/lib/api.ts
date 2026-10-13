@@ -7,12 +7,12 @@ export type Source = { id: string; kind: 'note' | 'file' | 'link'; name: string;
 export type Project = {
   pace?: number
   id: string; title: string; topic: string; audience: string; language: string; aspect: '16:9' | '9:16'
-  length: 'short' | 'medium' | 'long'; voice: string; voice_style: string; music: boolean
+  length: 'short' | 'medium' | 'long'; voice: string; music: boolean
   sources: Source[]; scenes: Scene[]; render_status: string; render_url?: string | null; render_error?: string | null
   character_url?: string | null; updated: number
 }
 export type EngineInfo = { name: string; label: string; blurb: string; precise: boolean }
-export type Meta = { engines: EngineInfo[]; voices: string[]; models: Record<string, string> }
+export type Meta = { engines: EngineInfo[]; voices: string[]; channel_voices: string[]; default_voice: string; models: Record<string, string> }
 export type ProjectRow = { id: string; title: string; topic: string; aspect: string; language: string; updated: number; render_status: string; scenes: number; cover: string | null; duration: number; engines: string[] }
 
 async function j<T>(r: Promise<Response>): Promise<T> {

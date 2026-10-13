@@ -37,7 +37,7 @@ def media_url(p: Project):
 
 @app.get("/api/meta")
 def meta():
-    return {"engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.GEMINI_VOICES + ["johnny"],
+    return {"engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
                        "video": config.MODEL_VEO, "tts": config.MODEL_TTS, "music": config.MODEL_MUSIC}}
 
@@ -68,13 +68,14 @@ class NewProject(BaseModel):
     language: str = "English"
     aspect: str = "16:9"
     length: str = "medium"
+    voice: str = tts.DEFAULT_VOICE
     notes: str = ""
 
 
 @app.post("/api/projects")
 def create(body: NewProject):
     p = Project(title=body.topic[:60] or "Untitled", topic=body.topic, audience=body.audience, language=body.language,
-                aspect=body.aspect, length=body.length)
+                aspect=body.aspect, length=body.length, voice=body.voice)
     if body.notes.strip():
         p.sources.append(Source(kind="note", name="Notes", text=body.notes))
     store.save(p)
@@ -88,7 +89,7 @@ def read(pid: str):
 
 @app.patch("/api/projects/{pid}")
 def update(pid: str, body: dict):
-    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "voice_style", "music", "pace"}
+    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace"}
     get(pid)
     return media_url(store.mutate(pid, lambda p: [setattr(p, k, v) for k, v in body.items() if k in allowed]))
 
