@@ -48,7 +48,7 @@ class WhiteboardEngine(Engine):
     params_schema = {
         "type": "object",
         "properties": {
-            "drawing": {"type": "string", "description": "what is drawn: simple objects, arrows, layout left to right. Max 3-4 elements. No words."},
+            "drawing": {"type": "string", "description": "what is drawn: simple objects and arrows, max 3-4 elements, laid out to suit the frame (left to right for landscape, top to bottom for vertical). No words."},
             "board": {"type": "string", "enum": ["chalk", "whiteboard"]},
         },
         "required": ["drawing", "board"],
@@ -59,7 +59,9 @@ class WhiteboardEngine(Engine):
         W, H = self.size(project)
         art = out_dir / "lineart.png"
         if not art.exists():
-            gemini.image(f"Simple black marker line drawing on a pure white background, filling the whole frame edge to edge, "
+            layout = ("tall vertical composition, elements stacked from top to bottom, filling the full height"
+                      if project.aspect == "9:16" else "wide composition, elements laid out left to right")
+            gemini.image(f"Simple black marker line drawing on a pure white background, {layout}, "
                          f"no paper, no border, no shading, no text or letters, clean single-weight strokes, "
                          f"whiteboard explainer style: {scene.params.get('drawing') or scene.brief}",
                          art, aspect=project.aspect)
@@ -69,7 +71,7 @@ class WhiteboardEngine(Engine):
             m = 20
             img = img[max(0, ys.min() - m):ys.max() + m, max(0, xs.min() - m):xs.max() + m]
         ih, iw = img.shape
-        k = min(W * 0.86 / iw, H * 0.82 / ih)
+        k = min(W * (0.9 if H > W else 0.86) / iw, H * 0.82 / ih)
         img = cv2.resize(img, (int(iw * k), int(ih * k)), interpolation=cv2.INTER_AREA)
         canvas_g = np.full((H, W), 255, np.uint8)
         y0, x0 = (H - img.shape[0]) // 2, (W - img.shape[1]) // 2
