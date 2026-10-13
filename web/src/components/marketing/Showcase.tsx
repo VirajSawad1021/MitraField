@@ -78,7 +78,7 @@ function DirectPane() {
       <div className="rounded-2xl border border-line">
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <p className="text-[14px] font-semibold">Storyboard</p>
-          <p className="text-[12px] text-muted">9 beats · 1:40</p>
+          <p className="text-[12px] text-muted">9 beats · 0:49</p>
         </div>
         <div className="space-y-2 p-3">
           {BOARD.slice(0, 5).map((b, i) => {
