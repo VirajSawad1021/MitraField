@@ -19,3 +19,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/.next/
 frontend/out/
+
+# tool-generated agent notes
+web/CLAUDE.md
+web/next-env.d.ts
