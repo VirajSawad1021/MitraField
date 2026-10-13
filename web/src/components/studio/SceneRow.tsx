@@ -19,7 +19,7 @@ export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag }: {
   return (
     <div {...drag} onClick={onClick}
       onMouseEnter={() => v.current?.play().catch(() => {})}
-      onMouseLeave={() => { if (v.current) { v.current.pause(); v.current.currentTime = 0; } }}
+      onMouseLeave={() => v.current?.load()}  // load() resets to the poster frame
       className={`group flex cursor-pointer gap-4 rounded-2xl border bg-white p-3 transition-all ${on ? "border-ink shadow-[0_0_0_1px_#141413]" : "border-line hover:border-line-strong"}`}>
       <div className={`relative shrink-0 overflow-hidden rounded-xl bg-ink ${tall ? "h-[132px] w-[74px]" : "aspect-video w-[200px] sm:w-[220px]"}`}>
         {s.clip_url ? (

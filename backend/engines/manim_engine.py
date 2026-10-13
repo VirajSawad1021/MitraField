@@ -11,6 +11,17 @@ import numpy as np
 config.background_color = "{bg}"
 INK, MUTED, ACCENT, ACCENT2 = "{ink}", "{muted}", "{accent}", "{accent2}"
 FONT = "Inter"
+
+
+class Text(Text):
+    """House text: Inter by default, never wider than the frame."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("font", FONT)
+        super().__init__(*args, **kwargs)
+        max_w = config.frame_width - 0.8
+        if self.width > max_w:
+            self.scale_to_fit_width(max_w)
 '''
 
 RULES = """Write a Manim Community v0.21 scene.
@@ -56,7 +67,11 @@ class ManimEngine(Engine):
 
     def _ask(self, scene, project, dur, extra=""):
         fw, fh = self.frame(project)
-        prompt = (RULES.format(dur=dur, fw=fw, fh=fh, hx=fw / 2 - 0.4, hy=fh / 2 - 0.4, aspect=project.aspect)
+        vertical = ("\nVERTICAL FRAME (phone Short): stack content top to bottom and use the full height. The main "
+                    "visual should be about 85% of the frame width and sit in the middle; one caption line above or "
+                    "below it. Text font_size 40-56. Everything must still be on screen and fully drawn in the last second.\n"
+                    if project.aspect == "9:16" else "")
+        prompt = (RULES.format(dur=dur, fw=fw, fh=fh, hx=fw / 2 - 0.4, hy=fh / 2 - 0.4, aspect=project.aspect) + vertical
                   + f"\n\nVideo topic: {project.topic}\nAudience: {project.audience}\n"
                   f"Narration for this scene ({dur:.1f} s):\n\"{scene.narration}\"\n"
                   f"What the viewer should see: {scene.params.get('approach') or scene.brief}\n"
