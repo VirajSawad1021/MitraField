@@ -43,10 +43,9 @@ class Project(BaseModel):
     language: str = "English"
     aspect: Literal["16:9", "9:16"] = "16:9"
     length: Literal["short", "medium", "long"] = "medium"
-    voice: str = "Charon"
-    voice_style: str = "Narrate in an engaging, warm documentary voice at a natural, lively pace"
+    voice: str = "Johnny"
     music: bool = True
-    pace: float = 1.12   # narration speed-up applied after TTS
+    pace: float = 1.0   # extra tempo on top of each voice's own pacing
     sources: list[Source] = []
     scenes: list[Scene] = []
     render_status: str = "idle"

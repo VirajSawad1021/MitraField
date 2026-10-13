@@ -24,7 +24,7 @@ MODEL_MUSIC = os.environ.get("STUDIO_MODEL_MUSIC", "lyria-3-clip-preview")
 
 # Manim lives in the channel venv; we call it as a subprocess.
 MANIM_PY = os.environ.get("STUDIO_MANIM_PY", str(ROOT.parent / "YT/ai_video_generator_gpu/venv/bin/python"))
-JOHNNY_URL = os.environ.get("STUDIO_JOHNNY_URL", "http://localhost:8002")
+OMNI_URL = os.environ.get("STUDIO_OMNI_URL", "http://localhost:8002")   # OmniVoice TTS server
 
 FPS = 30
 SIZES = {"16:9": (1920, 1080), "9:16": (1080, 1920)}
