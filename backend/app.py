@@ -42,9 +42,23 @@ def meta():
                        "video": config.MODEL_VEO, "tts": config.MODEL_TTS, "music": config.MODEL_MUSIC}}
 
 
+def _cover(p):
+    """Prefer a picture beat (Veo, illustration, character, globe) over a title card."""
+    root = str(config.DATA)
+    thumbs = [s for s in p.get("scenes", []) if s.get("thumb") and str(s["thumb"]).startswith(root)]
+    rank = {"veo": 0, "image": 1, "character": 2, "globe": 3}
+    if not thumbs:
+        return None
+    best = min(thumbs, key=lambda s: rank.get(s["engine"], 9))
+    return f"/files/{Path(best['thumb']).relative_to(root)}"
+
+
 @app.get("/api/projects")
 def projects():
-    return [{k: p.get(k) for k in ("id", "title", "topic", "aspect", "updated", "render_status")} | {"scenes": len(p.get("scenes", []))}
+    return [{k: p.get(k) for k in ("id", "title", "topic", "aspect", "language", "updated", "render_status")}
+            | {"scenes": len(p.get("scenes", [])), "cover": _cover(p),
+               "duration": round(sum(s.get("duration") or 0 for s in p.get("scenes", [])), 1),
+               "engines": sorted({s["engine"] for s in p.get("scenes", [])})}
             for p in store.list_all()]
 
 
@@ -239,6 +253,6 @@ def job_list():
 
 
 app.mount("/files", StaticFiles(directory=str(config.DATA)), name="files")
-dist = config.ROOT / "frontend" / "dist"
+dist = config.ROOT / "web" / "out"
 if dist.exists():
     app.mount("/", StaticFiles(directory=str(dist), html=True), name="ui")
