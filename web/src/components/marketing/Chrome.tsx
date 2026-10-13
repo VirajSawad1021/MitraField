@@ -10,6 +10,7 @@ const links = [
   { href: "/#engines", label: "Engines" },
   { href: "/#how", label: "How it works" },
   { href: "/#watch", label: "Watch a video" },
+  { href: "/demo", label: "Live demo" },
   { href: "/#faq", label: "FAQ" },
 ];
 
@@ -61,7 +62,7 @@ export function SiteNav() {
 
 export function SiteFooter() {
   const cols = [
-    { title: "Product", items: [["How it works", "/#how"], ["The seven engines", "/#engines"], ["Watch a video", "/#watch"], ["FAQ", "/#faq"]] },
+    { title: "Product", items: [["How it works", "/#how"], ["The seven engines", "/#engines"], ["Live demo", "/demo"], ["FAQ", "/#faq"]] },
     { title: "Make", items: [["New video", "/new"], ["Vertical Short", "/new?aspect=9:16"], ["From your notes", "/new#sources"], ["Projects", "/projects"]] },
     { title: "Engines", items: [["Math animation", "/#engines"], ["Globe & maps", "/#engines"], ["Whiteboard", "/#engines"], ["Veo shots", "/#engines"]] },
     { title: "Project", items: [["AI Builder Cup 2026", "/#about"], ["GitHub", "https://github.com/VirajSawad1021/MitraField"]] },
