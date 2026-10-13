@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, FileText, Monitor, Smartphone, Upload, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Eyebrow, Field, Segmented, inputCls } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, type Meta } from "@/lib/api";
+import { voiceGroups, voiceLabel } from "@/lib/voices";
 
 const EXAMPLES = [
   "Why does Japan have so few babies?",
@@ -37,6 +38,9 @@ function NewVideo() {
   const [length, setLength] = useState<"short" | "medium" | "long">(q.get("aspect") === "9:16" ? "short" : "medium");
   const [language, setLanguage] = useState("English");
   const [audience, setAudience] = useState(AUDIENCES[0]);
+  const [meta, setMeta] = useState<Meta | null>(null);
+  const [voice, setVoice] = useState("Johnny");
+  useEffect(() => { api.meta().then(setMeta).catch(() => {}); }, []);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -46,7 +50,7 @@ function NewVideo() {
     setBusy(true);
     setErr(null);
     try {
-      const p = await api.create({ topic, notes, aspect, length, language, audience });
+      const p = await api.create({ topic, notes, aspect, length, language, audience, voice });
       for (const f of files) await api.addFile(p.id, f);
       await api.storyboard(p.id);
       router.push(`/studio?p=${p.id}`);
@@ -91,6 +95,13 @@ function NewVideo() {
             <Field label="Narration language">
               <select value={language} onChange={(e) => setLanguage(e.target.value)} className={inputCls}>
                 {LANGS.map((l) => <option key={l}>{l}</option>)}
+              </select>
+            </Field>
+            <Field label="Narrator" hint="Channel voices are your own clones; Gemini voices cover more languages.">
+              <select value={voice} onChange={(e) => setVoice(e.target.value)} className={inputCls}>
+                {voiceGroups(meta?.voices ?? ["Johnny"], meta?.channel_voices ?? ["Johnny"]).map((g) => (
+                  <optgroup key={g.label} label={g.label}>{g.items.map((v) => <option key={v} value={v}>{voiceLabel(v)}</option>)}</optgroup>
+                ))}
               </select>
             </Field>
             <Field label="Audience" hint="The director adjusts vocabulary, pace and examples.">

@@ -81,9 +81,10 @@ def image(prompt, out, aspect="16:9", refs=(), model=None):
     return Path(out)
 
 
-def tts(text_in, out_wav, voice="Charon", style=None, model=None):
-    """Gemini TTS -> 24 kHz mono 16-bit wav."""
-    prompt = f"{style}: {text_in}" if style else text_in
+def tts(text_in, out_wav, voice="Charon", model=None):
+    """Gemini TTS -> 24 kHz mono 16-bit wav. Send only the words to speak: any
+    instruction in the prompt can end up read aloud."""
+    prompt = text_in
     cfg = types.GenerateContentConfig(
         response_modalities=["AUDIO"],
         speech_config=types.SpeechConfig(voice_config=types.VoiceConfig(

@@ -32,10 +32,10 @@ def set_scene(pid, sid, **kw):
 def ensure_audio(pid, sid):
     p = store.load(pid)
     s = store.scene(p, sid)
-    nh = h(s.narration, p.voice, p.voice_style, p.pace)
+    nh = h(s.narration, p.voice, p.pace, "v2")
     if s.audio and s.narration_hash == nh and Path(s.audio).exists():
         return s.duration
-    wav, dur = tts.synth(s.narration, sdir(pid, sid) / f"voice_{nh}.wav", voice=p.voice, style=p.voice_style, pace=p.pace)
+    wav, dur = tts.synth(s.narration, sdir(pid, sid) / f"voice_{nh}.wav", voice=p.voice, pace=p.pace, language=p.language)
     set_scene(pid, sid, audio=str(wav), duration=round(dur, 3), narration_hash=nh)
     return dur
 

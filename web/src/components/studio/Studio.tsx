@@ -7,6 +7,7 @@ import { AgentWorking, Badge, Button, ErrorNote, Skeleton, fmtTime } from "@/com
 import { api, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { PROJECT_BUSY, SCENE_BUSY, statusTone } from "@/lib/status";
+import { voiceGroups, voiceLabel } from "@/lib/voices";
 import { Inspector } from "./Inspector";
 import { Overview } from "./Overview";
 import { SceneRow } from "./SceneRow";
@@ -73,7 +74,9 @@ export function Studio({ id }: { id: string }) {
           {p.scenes.length > 0 && <Badge tone="good">{exact} exact</Badge>}
           <select value={p.voice} onChange={(e) => run(() => api.patch(p.id, { voice: e.target.value }))}
             className="h-10 rounded-full border border-line-strong bg-white px-3.5 text-[13px] font-medium focus:outline-none" title="Narrator voice">
-            {meta.voices.map((v) => <option key={v}>{v}</option>)}
+            {voiceGroups(meta.voices, meta.channel_voices).map((g) => (
+              <optgroup key={g.label} label={g.label}>{g.items.map((v) => <option key={v} value={v}>{voiceLabel(v)}</option>)}</optgroup>
+            ))}
           </select>
           <TranslateMenu disabled={!p.scenes.length} exclude={p.language} onPick={async (l) => {
             await api.translate(p.id, l);
