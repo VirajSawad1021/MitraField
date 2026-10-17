@@ -38,13 +38,17 @@ The brief for each scene describes concretely what the viewer SEES, in enough de
 
 Cast & sets (visual consistency across the whole video):
 - Define the recurring visual ingredients once: exactly 1 "style" (the art direction every generated shot
-  shares, e.g. "warm painterly editorial illustration, soft natural light, muted earthy palette"), 0-2
+  shares). Default to photographic, cinematic documentary realism, like a high-end film or a premium
+  documentary series: name the camera feel, lighting and colour grade, e.g. "cinematic documentary realism,
+  overcast natural light, cool desaturated grade, 35mm film grain". Never cartoon, chibi, anime or toy-like 3D
+  unless the user explicitly asks for illustration. 0-2
   "character" (a recurring guide or the person the story follows), 0-3 "location", 0-2 "object".
 - The main recurring subject (a ship, a building, a machine, a person the story follows) MUST be a cast item,
   as do places that are shown more than once. Define things that appear in 2+ generated beats, and the
   character used by the character engine.
 - Names are short and human-readable, e.g. "RMS Titanic", "Captain Smith", "Engine room", "Painterly night".
-- Descriptions are visual and specific (age, clothing, colours, materials, era), never abstract.
+- Descriptions are visual and specific (age, clothing, colours, materials, era), never abstract. Characters are
+  real-looking adults (a presenter, an expert, or the historical person the story follows), never mascots.
 - Each scene lists the names of the cast items visible in it (generative engines only; empty for exact engines).
 
 Engines:

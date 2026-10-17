@@ -1,6 +1,7 @@
 """Veo 3.1 hero shots. Expensive: the director uses it for at most 2 moments per video.
 Falls back to the image engine if generation fails or is filtered."""
 from .. import cast, config, gemini
+from ..look import finish
 from .base import Engine
 
 
@@ -14,7 +15,7 @@ class VeoEngine(Engine):
     params_schema = {
         "type": "object",
         "properties": {
-            "prompt": {"type": "string", "description": "shot description: subject, action, setting, lighting, lens, camera movement. No text on screen, no dialogue."},
+            "prompt": {"type": "string", "description": "shot description like a cinematographer's: subject, action, real setting, motivated lighting, lens, one camera move. Photographic realism. No text on screen, no dialogue."},
         },
         "required": ["prompt"],
     }
@@ -30,8 +31,9 @@ class VeoEngine(Engine):
             if refs:   # draw an on-model first frame with the cast references, then animate it
                 first = out_dir / "first_frame.png"
                 if not first.exists():
-                    gemini.image(f"Opening frame of this shot: {scene.params.get('prompt') or scene.brief}. "
-                                 f"{cast.describe(project, scene)}Photographic, cinematic, no text.",
+                    st = cast.style_item(project)
+                    gemini.image(finish(f"Opening frame of this shot: {scene.params.get('prompt') or scene.brief}. "
+                                        f"{cast.describe(project, scene)}", st.description if st else None),
                                  first, aspect=project.aspect, refs=refs)
             # pay only for what the beat needs: the shortest Veo length that covers it (with slow-motion headroom)
             seconds = next((n for n in (4, 6, 8) if n * self.stretch_max >= duration), 8)
