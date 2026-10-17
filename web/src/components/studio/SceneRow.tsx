@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { AlertTriangle, GripVertical, Loader2, Play } from "lucide-react";
 import { Badge } from "@/components/ui";
 import type { CastItem, Scene } from "@/lib/api";
+import { EngineChip } from "@/components/EngineChip";
 import { engineStyle } from "@/lib/engines";
 import { SCENE_BUSY } from "@/lib/status";
 
@@ -20,8 +21,8 @@ export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag, cas
     <div {...drag} onClick={onClick}
       onMouseEnter={() => v.current?.play().catch(() => {})}
       onMouseLeave={() => v.current?.load()}  // load() resets to the poster frame
-      className={`group flex cursor-pointer gap-4 rounded-2xl border bg-white p-3 transition-all ${on ? "border-ink shadow-[0_0_0_1px_#141413]" : "border-line hover:border-line-strong"}`}>
-      <div className={`relative shrink-0 overflow-hidden rounded-xl bg-ink ${tall ? "h-[132px] w-[74px]" : "aspect-video w-[200px] sm:w-[220px]"}`}>
+      className={`group flex cursor-pointer gap-4 rounded-2xl border bg-white p-3 transition-all hover:-translate-y-px hover:shadow-[0_10px_30px_-24px_rgba(20,20,19,0.45)] ${tall ? "" : "flex-col sm:flex-row"} ${on ? "border-ink shadow-[0_0_0_1px_#141413]" : "border-line hover:border-line-strong"}`}>
+      <div className={`relative shrink-0 overflow-hidden rounded-xl bg-ink ${tall ? "h-[132px] w-[74px]" : "aspect-video w-full sm:w-[220px]"}`}>
         {s.clip_url ? (
           <video ref={v} src={s.clip_url} poster={s.thumb_url ?? undefined} muted loop playsInline preload="none" className="h-full w-full object-cover" />
         ) : (
@@ -37,9 +38,7 @@ export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag, cas
       <div className="min-w-0 flex-1 py-0.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[11px] text-muted">b{i + 1}</span>
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: st.color }}>
-            <st.icon className="h-3 w-3" />{label ?? st.short}
-          </span>
+          <EngineChip engine={s.engine} label={label} />
           {st.kind === "exact" ? <Badge tone="good">exact</Badge> : <Badge>generated</Badge>}
           {s.status === "error" && <Badge tone="bad"><AlertTriangle className="h-3 w-3" />error</Badge>}
           {s.error && s.status === "ready" && <Badge tone="warn" title={s.error}>fallback used</Badge>}

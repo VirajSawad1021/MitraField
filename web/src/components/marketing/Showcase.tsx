@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Languages, ShieldCheck, Sparkles } from "lucide-react";
+import { EngineChip } from "@/components/EngineChip";
 import { engineStyle } from "@/lib/engines";
 
 /* Real storyboard from the Strait of Hormuz project the director wrote. */
@@ -82,14 +83,11 @@ function DirectPane() {
         </div>
         <div className="space-y-2 p-3">
           {BOARD.slice(0, 5).map((b, i) => {
-            const s = engineStyle(b.e);
             return (
               <div key={i} className="flex items-start gap-3 rounded-xl border border-line px-3 py-2.5" style={{ animation: `rise .6s ${i * 90}ms both cubic-bezier(.2,.7,.2,1)` }}>
                 <span className="mt-0.5 font-mono text-[10px] text-muted">b{i + 1}</span>
                 <p className="flex-1 text-[12px] leading-snug text-ink">{b.n}</p>
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: s.color }}>
-                  <s.icon className="h-3 w-3" />{s.short}
-                </span>
+                <EngineChip engine={b.e} size="sm" />
               </div>
             );
           })}

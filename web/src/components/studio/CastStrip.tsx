@@ -21,9 +21,9 @@ export function CastStrip({ p, setP }: { p: Project; setP: (p: Project) => void 
   return (
     <div className="mt-5 rounded-2xl border border-line bg-white p-3">
       <div className="flex items-center gap-3 overflow-x-auto scrollbar-thin">
-        <div className="shrink-0 pl-1 pr-2">
-          <p className="text-[13px] font-semibold">Cast &amp; sets</p>
-          <p className="text-[11px] text-muted">Same look in every beat</p>
+        <div className="shrink-0 pl-1 pr-1 sm:pr-2">
+          <p className="text-[13px] font-semibold">Cast<span className="hidden sm:inline"> &amp; sets</span></p>
+          <p className="hidden text-[11px] text-muted sm:block">Same look in every beat</p>
         </div>
         {p.cast.map((c) => {
           const K = CAST_KIND[c.kind];

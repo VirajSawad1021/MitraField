@@ -68,7 +68,7 @@ export function Studio({ id }: { id: string }) {
         <div className="min-w-0">
           <Link href="/projects" className="text-[12px] font-medium text-muted hover:text-ink">← Projects</Link>
           <Title p={p} onSave={(title) => run(() => api.patch(p.id, { title }))} />
-          <p className="mt-1 max-w-2xl truncate text-[13px] text-body">{p.topic}</p>
+          {p.topic.trim().toLowerCase() !== p.title.trim().toLowerCase() && <p className="mt-1 max-w-2xl truncate text-[13px] text-body">{p.topic}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-5">
           <Badge tone={tone}>{label === "Rendering" ? `Rendering ${ready}/${p.scenes.length}` : label}</Badge>
