@@ -61,7 +61,7 @@ async def s5(pg):   # cast strip: open the ship
     await pg.goto(f"{B}/studio/?p={TIT}"); await pg.wait_for_timeout(LEAD * 1000)
     await pg.mouse.move(1880, 500); await pg.wait_for_timeout(1000)
     await pg.click("text=RMS Titanic"); await pg.wait_for_timeout(2500)
-    await pg.click("text=Alex"); await pg.wait_for_timeout(2000)
+    await pg.click("text=Thomas"); await pg.wait_for_timeout(2000)
     await pg.click("text=Moody historical"); await pg.wait_for_timeout(1500)
 
 
