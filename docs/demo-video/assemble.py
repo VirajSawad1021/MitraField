@@ -40,7 +40,8 @@ p6 = [seg(manim["clip"], 0.8, d6, W / "s6a.mp4"), seg(globe["clip"], 1.5, d6, W 
 secs.append(cat(p6, W / "s6.mp4"))
 secs.append(seg(rec("s7_edit"), 2.0, dur["s7_edit"], W / "s7.mp4"))
 d8 = dur["s8_results"]; a8 = 6.0
-secs.append(cat([seg(rec("s8_results"), 2.0, a8, W / "s8a.mp4"), seg(vaccine_final, 11.0, d8 - a8, W / "s8b.mp4", fit="pad")], W / "s8.mp4"))
+presenter = [s for s in H["scenes"] if s["engine"] == "character"][0]
+secs.append(cat([seg(rec("s8_results"), 2.0, a8, W / "s8a.mp4"), seg(presenter["clip"], 0.5, d8 - a8, W / "s8b.mp4")], W / "s8.mp4"))
 secs.append(seg(rec("s9_close"), 2.0, dur["s9_close"], W / "s9.mp4"))
 run(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", "scratch/deck/slide_12.png", "-t", "3.2",
      "-vf", "scale=1920:1080,fade=t=in:d=0.5,fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", W / "end.mp4"])
