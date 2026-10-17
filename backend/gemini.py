@@ -9,7 +9,7 @@ from pathlib import Path
 from google import genai
 from google.genai import types
 
-from . import config
+from . import config, costs
 
 
 _client = None
@@ -44,7 +44,9 @@ def _retry(fn, tries=3):
 def text(prompt, model=None, system=None, parts=None, temperature=None):
     contents = [prompt] + list(parts or [])
     cfg = types.GenerateContentConfig(system_instruction=system, temperature=temperature)
-    r = _retry(lambda: client().models.generate_content(model=model or config.MODEL_FAST, contents=contents, config=cfg))
+    m = model or config.MODEL_FAST
+    r = _retry(lambda: client().models.generate_content(model=m, contents=contents, config=cfg))
+    costs.tokens(m, r.usage_metadata)
     return r.text or ""
 
 
@@ -53,7 +55,9 @@ def json_call(prompt, schema=None, model=None, system=None, parts=None, temperat
     contents = [prompt] + list(parts or [])
     cfg = types.GenerateContentConfig(system_instruction=system, temperature=temperature,
                                       response_mime_type="application/json", response_schema=schema)
-    r = _retry(lambda: client().models.generate_content(model=model or config.MODEL_FAST, contents=contents, config=cfg))
+    m = model or config.MODEL_FAST
+    r = _retry(lambda: client().models.generate_content(model=m, contents=contents, config=cfg))
+    costs.tokens(m, r.usage_metadata)
     return json.loads(r.text)
 
 
@@ -76,6 +80,8 @@ def image(prompt, out, aspect="16:9", refs=(), model=None):
         raise RuntimeError("no image returned")
 
     data = _retry(go)
+    m = model or config.MODEL_IMAGE
+    costs.add("image", costs.IMAGE.get(m, 0.067), m, Path(out).name)
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     raw = Path(out).with_suffix(".raw")
     raw.write_bytes(data)
@@ -100,6 +106,7 @@ def tts(text_in, out_wav, voice="Charon", model=None):
         return r.candidates[0].content.parts[0].inline_data.data
 
     pcm = _retry(go)
+    costs.add("voice", len(pcm) / 48000 * costs.TTS_PER_SECOND, model or config.MODEL_TTS)
     with wave.open(str(out_wav), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
@@ -119,6 +126,8 @@ def video(prompt, out, aspect="16:9", seconds=8, image_path=None, model=None):
     while not op.done:
         time.sleep(8)
         op = client().operations.get(op)
+    m = model or config.MODEL_VEO
+    costs.add("video", seconds * costs.VEO_PER_SECOND.get(m, 0.10), m, f"{seconds}s clip")   # billed even if filtered
     if op.error:
         raise RuntimeError(f"veo: {op.error}")
     vids = op.response.generated_videos if op.response else None
@@ -139,5 +148,6 @@ def music(prompt, out):
         for p in (cand.content.parts if cand and cand.content and cand.content.parts else []):
             if p.inline_data and p.inline_data.data:
                 Path(out).write_bytes(p.inline_data.data)
+                costs.add("music", costs.MUSIC_PER_CLIP, config.MODEL_MUSIC)
                 return Path(out), p.inline_data.mime_type
     raise RuntimeError("no music returned")

@@ -2,7 +2,7 @@
 so a still never sits on screen for more than ~6 s."""
 from concurrent.futures import ThreadPoolExecutor
 
-from .. import cast, gemini, media
+from .. import cast, costs, gemini, media
 from .base import Engine
 from .motion import MOVES, camera
 
@@ -74,7 +74,7 @@ class ImageEngine(Engine):
             return f
 
         with ThreadPoolExecutor(3) as ex:
-            stills = list(ex.map(still, range(n)))
+            stills = list(ex.map(costs.bind(still), range(n)))
         each = (duration + XF * (n - 1)) / n
         durs = [each] * n
         clips = [camera(stills[i], out_dir / f"shot_{i}.mp4", durs[i], self.size(project), shots[i].get("move", "push_in"))

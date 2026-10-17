@@ -2,7 +2,7 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-from .. import cast, gemini, store
+from .. import cast, costs, gemini, store
 from .base import Engine
 from .image import XF, chain
 from .motion import MOVES, camera
@@ -72,7 +72,7 @@ class CharacterEngine(Engine):
             return f
 
         with ThreadPoolExecutor(2) as ex:
-            stills = list(ex.map(still, range(n)))
+            stills = list(ex.map(costs.bind(still), range(n)))
         each = (duration + XF * (n - 1)) / n
         clips = [camera(stills[i], out_dir / f"shot_{i}.mp4", each, self.size(project), shots[i].get("move", "push_in"), 0.8)
                  for i in range(n)]

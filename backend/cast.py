@@ -9,7 +9,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import gemini, store
+from . import costs, gemini, store
 from .models import CastItem, Project, Scene
 
 _lock = threading.Lock()
@@ -29,6 +29,7 @@ def style_item(p: Project):
     return next((c for c in p.cast if c.kind == "style"), None)
 
 
+@costs.tracked
 def generate(pid, cid):
     """(Re)generate one item's reference image. Non-style items use the style as a reference."""
     with _lock:
@@ -56,6 +57,7 @@ def _set(p, cid, **kw):
                 setattr(c, k, v)
 
 
+@costs.tracked
 def ensure(pid, retry_errors=True):
     """Generate every missing reference: style first (others are drawn in its style)."""
     with _ensure_lock:
@@ -74,7 +76,7 @@ def _ensure(pid, retry_errors):
             pass
     rest = [c.id for c in todo if c.kind != "style"]
     with ThreadPoolExecutor(3) as ex:
-        list(ex.map(lambda cid: _safe(pid, cid), rest))
+        list(ex.map(costs.bind(lambda cid: _safe(pid, cid)), rest))
 
 
 def _safe(pid, cid):
