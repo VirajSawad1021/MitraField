@@ -30,6 +30,38 @@ async def guard_writes(request, call_next):
     return await call_next(request)
 
 
+@app.on_event("startup")
+def recover_interrupted():
+    """Jobs run inside this process, so a restart (deploy, crash, scale event) loses them. Anything left
+    'queued', 'rendering', 'directing' or 'generating' is reset so the UI never shows a stuck spinner.
+    Nothing is re-run automatically: that could spend credits nobody asked for."""
+    busy_scene, busy_project = {"queued", "rendering"}, {"directing", "rendering scenes", "assembling"}
+    for row in store.list_all():
+        pid = row.get("id")
+        if not pid:
+            continue
+        stuck = (row.get("render_status") in busy_project or any(s.get("status") in busy_scene for s in row.get("scenes", []))
+                 or any(c.get("status") == "generating" for c in row.get("cast", [])))
+        if not stuck:
+            continue
+
+        def reset(p):
+            for s in p.scenes:
+                if s.status in busy_scene:
+                    s.status = "ready" if s.clip and Path(s.clip).exists() and s.render_hash else "draft"
+            for c in p.cast:
+                if c.status == "generating":
+                    c.status = "pending"
+            if p.render_status in busy_project:
+                was = p.render_status
+                p.render_status = "error"
+                p.render_error = ("The server restarted while this project was "
+                                  f"{'being directed' if was == 'directing' else 'rendering'}. Press "
+                                  f"{'Re-direct' if was == 'directing' else 'Render video'} to continue; finished beats are kept.")
+        store.mutate(pid, reset)
+        print(f"[recover] reset interrupted project {pid}", flush=True)
+
+
 def friendly_error(e):
     s = str(e)
     if "spending cap" in s or "spend cap" in s:
