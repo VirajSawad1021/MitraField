@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Download, Film, Languages, Play, Sparkles, Wand2 } from "lucide-react";
-import { AgentWorking, Badge, Button, ErrorNote, Skeleton, fmtTime } from "@/components/ui";
+import { AgentWorking, Badge, Button, ErrorNote, Segmented, Skeleton, fmtTime } from "@/components/ui";
 import { api, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { PROJECT_BUSY, SCENE_BUSY, statusTone } from "@/lib/status";
@@ -74,6 +74,9 @@ export function Studio({ id }: { id: string }) {
           <Badge tone={tone}>{label === "Rendering" ? `Rendering ${ready}/${p.scenes.length}` : label}</Badge>
           {p.scenes.length > 0 && <Badge>{p.scenes.length} beats{total ? ` · ${fmtTime(total)}` : ""}</Badge>}
           {p.scenes.length > 0 && <Badge tone="good">{exact} exact</Badge>}
+          {!!p.cost?.total && <Badge tone="info" title={`${p.cost.calls} billable calls`}>${p.cost.total.toFixed(2)} spent</Badge>}
+          <Segmented size="sm" value={p.quality ?? "final"} onChange={(v) => run(() => api.patch(p.id, { quality: v }))}
+            options={[{ value: "draft", label: "Draft" }, { value: "final", label: "Final" }]} />
           <select value={p.voice} onChange={(e) => run(() => api.patch(p.id, { voice: e.target.value }))}
             className="h-10 rounded-full border border-line-strong bg-white px-3.5 text-[13px] font-medium focus:outline-none" title="Narrator voice">
             {voiceGroups(meta.voices, meta.channel_voices).map((g) => (

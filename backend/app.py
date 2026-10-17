@@ -9,11 +9,20 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import cast, config, director, engines, jobs, pipeline, store, tts
+from . import cast, config, costs, director, engines, jobs, pipeline, store, tts
 from .models import CastItem, Project, Scene, Source
 
 app = FastAPI(title="MitraField")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def friendly_error(e):
+    s = str(e)
+    if "spending cap" in s or "spend cap" in s:
+        return "The Gemini API key has reached its monthly spending cap. Raise it at ai.studio/spend, then try again."
+    if "429" in s or "RESOURCE_EXHAUSTED" in s:
+        return "Gemini is rate-limiting this key right now. Wait a minute and try again."
+    return s[:400]
 
 
 def get(pid):
@@ -31,6 +40,7 @@ def media_url(p: Project):
     for s in d["scenes"]:
         s["clip_url"], s["thumb_url"], s["audio_url"] = u(s["clip"]), u(s["thumb"]), u(s["audio"])
     d["render_url"] = u(d["render_path"])
+    d["cost"] = costs.summary(p.id)
     for c in d["cast"]:
         c["image_url"] = u(c["image"])
     d["character_url"] = u(str(config.DATA / p.id / "character.png")) if (config.DATA / p.id / "character.png").exists() else None
@@ -91,7 +101,7 @@ def read(pid: str):
 
 @app.patch("/api/projects/{pid}")
 def update(pid: str, body: dict):
-    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace"}
+    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace", "quality"}
     get(pid)
     return media_url(store.mutate(pid, lambda p: [setattr(p, k, v) for k, v in body.items() if k in allowed]))
 
@@ -122,6 +132,7 @@ def del_source(pid: str, sid: str):
     return media_url(store.mutate(pid, lambda p: setattr(p, "sources", [s for s in p.sources if s.id != sid])))
 
 
+@costs.tracked
 def _storyboard(pid):
     store.mutate(pid, lambda p: setattr(p, "render_status", "directing"))
     try:
@@ -130,7 +141,8 @@ def _storyboard(pid):
         store.save(p)
         jobs.submit(f"cast {pid}", cast.ensure, pid)   # reference images are ready before the first render
     except Exception as e:
-        store.mutate(pid, lambda p: (setattr(p, "render_status", "error"), setattr(p, "render_error", str(e)[:400])))
+        msg = friendly_error(e)
+        store.mutate(pid, lambda p: (setattr(p, "render_status", "error"), setattr(p, "render_error", msg)))
         raise
 
 
@@ -239,6 +251,7 @@ def reorder(pid: str, body: dict):
     return media_url(store.mutate(pid, f))
 
 
+@costs.tracked
 def _rewrite(pid, sid, instruction):
     p = store.load(pid)
     s = director.rewrite_scene(p, store.scene(p, sid), instruction)
@@ -266,7 +279,8 @@ def render_one(pid: str, sid: str, body: dict | None = None):
 
 @app.post("/api/projects/{pid}/render")
 def render(pid: str):
-    get(pid)
+    if not get(pid).scenes:
+        raise HTTPException(400, "There is no storyboard to render yet.")
     jobs.submit(f"render all {pid}", pipeline.render_all, pid)
     return media_url(store.mutate(pid, lambda p: setattr(p, "render_status", "rendering scenes")))
 
@@ -277,6 +291,7 @@ def assemble(pid: str):
     return media_url(store.mutate(pid, lambda p: setattr(p, "render_status", "assembling")))
 
 
+@costs.tracked
 def _translate(pid, language):
     src = store.load(pid)
     lines = director.translate(src, language)
