@@ -5,6 +5,7 @@ import { FileText, Play, StickyNote, Upload, X } from "lucide-react";
 import { Card, Eyebrow, inputCls } from "@/components/ui";
 import { api, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
+import { LookPicker } from "@/components/LookPicker";
 
 export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; setP: (p: Project) => void; onWatch: () => void }) {
   const [note, setNote] = useState("");
@@ -28,6 +29,16 @@ export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; s
           <div className="flex items-center justify-between px-4 py-3">
             <p className="text-[13px] font-semibold">Finished video</p>
             <a href={p.render_url} download className="text-[12px] font-semibold text-body underline underline-offset-2 hover:text-ink">Download</a>
+          </div>
+        </Card>
+      )}
+
+      {meta.looks && (
+        <Card className="p-4">
+          <Eyebrow>Look</Eyebrow>
+          <div className="mt-3">
+            <LookPicker looks={meta.looks} cols={2} value={p.look ?? "cinematic"}
+              onChange={(id) => id !== p.look && confirm("Switch the look? The cast is redrawn in it; re-render the video to apply it to every beat.") && api.patch(p.id, { look: id }).then(setP)} />
           </div>
         </Card>
       )}

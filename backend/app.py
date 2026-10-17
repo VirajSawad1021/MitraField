@@ -63,7 +63,8 @@ def media_url(p: Project):
 
 @app.get("/api/meta")
 def meta():
-    return {"locked": bool(PASSCODE), "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
+    from .look import LOOKS
+    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
                        "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}", "music": config.MODEL_MUSIC}}
 
@@ -95,13 +96,14 @@ class NewProject(BaseModel):
     aspect: str = "16:9"
     length: str = "medium"
     voice: str = tts.DEFAULT_VOICE
+    look: str = "cinematic"
     notes: str = ""
 
 
 @app.post("/api/projects")
 def create(body: NewProject):
     p = Project(title=body.topic[:60] or "Untitled", topic=body.topic, audience=body.audience, language=body.language,
-                aspect=body.aspect, length=body.length, voice=body.voice)
+                aspect=body.aspect, length=body.length, voice=body.voice, look=body.look)
     if body.notes.strip():
         p.sources.append(Source(kind="note", name="Notes", text=body.notes))
     store.save(p)
@@ -115,9 +117,22 @@ def read(pid: str):
 
 @app.patch("/api/projects/{pid}")
 def update(pid: str, body: dict):
-    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace", "quality"}
-    get(pid)
-    return media_url(store.mutate(pid, lambda p: [setattr(p, k, v) for k, v in body.items() if k in allowed]))
+    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace", "quality", "look"}
+    old = get(pid)
+    p = store.mutate(pid, lambda p: [setattr(p, k, v) for k, v in body.items() if k in allowed])
+    if "look" in body and body["look"] != old.look and p.cast:
+        # a new look: restyle the cast so every reference (and the beats using it) is redrawn in it
+        from .look import get as get_look
+        lk = get_look(p.look)
+
+        def restyle(pp):
+            for c in pp.cast:
+                if c.kind == "style":
+                    c.description = f"{lk['label']}: {lk['image']}"
+                c.image, c.status = None, "pending"
+        store.mutate(pid, restyle)
+        jobs.submit(f"cast {pid}", cast.ensure, pid)
+    return media_url(get(pid))
 
 
 @app.delete("/api/projects/{pid}")

@@ -15,7 +15,7 @@ class VeoEngine(Engine):
     params_schema = {
         "type": "object",
         "properties": {
-            "prompt": {"type": "string", "description": "shot description like a cinematographer's: subject, action, real setting, motivated lighting, lens, one camera move. Photographic realism. No text on screen, no dialogue."},
+            "prompt": {"type": "string", "description": "shot description like a cinematographer's: subject, action, setting, lighting, lens, one camera move. Match the project's look. No text on screen, no dialogue."},
         },
         "required": ["prompt"],
     }
@@ -24,7 +24,9 @@ class VeoEngine(Engine):
         out = out_dir / "veo.mp4"
         if out.exists():
             return out
-        prompt = (scene.params.get("prompt") or scene.brief) + " Cinematic, natural motion, no on-screen text, no subtitles, no logos."
+        from ..look import get as get_look
+        prompt = ((scene.params.get("prompt") or scene.brief) + f" Visual style: {get_look(project.look)['image']} "
+                  "Natural motion, no on-screen text, no subtitles, no logos.")
         refs = cast.refs_for(project, scene)
         try:
             first = None
@@ -33,7 +35,7 @@ class VeoEngine(Engine):
                 if not first.exists():
                     st = cast.style_item(project)
                     gemini.image(finish(f"Opening frame of this shot: {scene.params.get('prompt') or scene.brief}. "
-                                        f"{cast.describe(project, scene)}", st.description if st else None),
+                                        f"{cast.describe(project, scene)}", st.description if st else None, project.look),
                                  first, aspect=project.aspect, refs=refs)
             # pay only for what the beat needs: the shortest Veo length that covers it (with slow-motion headroom)
             seconds = next((n for n in (4, 6, 8) if n * self.stretch_max >= duration), 8)

@@ -60,6 +60,7 @@ class Project(BaseModel):
     length: Literal["short", "medium", "long"] = "medium"
     voice: str = "Johnny"   # falls back to the deployment default when unavailable
     music: bool = True
+    look: str = "cinematic"   # art direction preset, see backend/look.py
     quality: Literal["draft", "final"] = "final"   # draft = cheaper Veo model for iterating
     pace: float = 1.0   # extra tempo on top of each voice's own pacing
     sources: list[Source] = []

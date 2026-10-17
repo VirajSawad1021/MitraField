@@ -7,7 +7,7 @@ from .base import Engine
 from .image import XF, chain
 from .motion import MOVES, camera
 
-from ..look import CINEMATIC, finish
+from ..look import CINEMATIC, character as look_character, finish
 
 CHAR_STYLE = CINEMATIC
 
@@ -19,9 +19,9 @@ def reference(project):
     f = store.pdir(project.id) / "character.png"
     with _lock:
         if not f.exists():
-            gemini.image(finish(f"Portrait reference of one real-looking adult presenter for a documentary about "
-                                f"'{project.topic}': natural face, age-appropriate wardrobe, waist-up, neutral expression, "
-                                f"plain softly lit grey backdrop"), f, aspect="1:1")
+            gemini.image(finish(f"Character reference of the presenter of an explainer about '{project.topic}': "
+                                f"{look_character(project.look)}. Waist-up, front view, neutral expression, plain backdrop",
+                                look=project.look), f, aspect="1:1")
     return f
 
 
@@ -29,9 +29,9 @@ class CharacterEngine(Engine):
     name = "character"
     heavy = False
     label = "Presenter"
-    blurb = ("A recurring real-looking person (the same face every time), filmed like a documentary: a presenter, "
-             "an expert, or the person the story follows, acting out the idea in a real setting. Use for human "
-             "moments, analogies and 'imagine you...' beats. Good every 4-6 scenes.")
+    blurb = ("A recurring presenter or the person the story follows, drawn in the project's look with the same design "
+             "every time, acting out the idea in a specific setting. Use for human moments, analogies and "
+             "'imagine you...' beats. Good every 4-6 scenes.")
     params_schema = {
         "type": "object",
         "properties": {
@@ -66,9 +66,10 @@ class CharacterEngine(Engine):
             f = out_dir / f"char_{i}.png"
             if not f.exists():
                 sh = shots[i]
-                gemini.image(finish(f"Film still. The exact same person as in the reference image (same face, hair, build "
-                                    f"and wardrobe), {sh['action']}. Setting: {sh['setting']}. {who}Medium or medium-wide "
-                                    f"shot, the person clearly visible, candid and unposed", style), f, aspect=project.aspect, refs=refs)
+                gemini.image(finish(f"The exact same character as in the reference image (same face, hair, build, wardrobe "
+                                    f"and rendering style), {sh['action']}. Setting: {sh['setting']}. {who}Medium or "
+                                    f"medium-wide shot, the character clearly visible, natural and unposed",
+                                    style, project.look), f, aspect=project.aspect, refs=refs)
             return f
 
         with ThreadPoolExecutor(2) as ex:
