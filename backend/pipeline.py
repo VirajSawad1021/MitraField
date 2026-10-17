@@ -76,6 +76,12 @@ def render_scene(pid, sid, force=False):
             shutil.rmtree(work)
         work.mkdir(exist_ok=True)
         err = None
+        reuse = s.params.get("_reuse_clip")
+        if reuse and Path(reuse).exists():   # e.g. a translation: same picture, new narration length
+            media.fit(reuse, final, dur, config.SIZES[p.aspect], stretch_max=1.25)
+            th = media.thumb(final, sdir(pid, sid) / f"thumb_{rh}.jpg")
+            set_scene(pid, sid, status="ready", clip=str(final), thumb=str(th), render_hash=rh, error=None)
+            return
         from .engines.kit import use_palette
         try:
             with use_palette(p.look):   # code-drawn engines take the look's colours
