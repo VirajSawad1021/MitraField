@@ -24,8 +24,10 @@ OMNI_VOICES = {
 }
 GEMINI_VOICES = ["Charon", "Kore", "Puck", "Fenrir", "Aoede", "Orus", "Leda", "Zephyr"]
 GEMINI_TEMPO = 1.1   # Gemini voices read slowly for explainers
+if not config.OMNI_URL:   # e.g. on Cloud Run, where the GPU voice server is not reachable
+    OMNI_VOICES = {}
 VOICES = list(OMNI_VOICES) + GEMINI_VOICES
-DEFAULT_VOICE = "Johnny"
+DEFAULT_VOICE = "Johnny" if OMNI_VOICES else "Charon"
 
 _omni_lock = threading.Lock()   # one request at a time: the GPU box is shared
 
@@ -62,6 +64,8 @@ def synth(text, out_wav, voice=DEFAULT_VOICE, pace=1.0, check=True, language="En
     """Synthesize one line to a trimmed 48 kHz mono wav. Returns (path, seconds)."""
     out_wav = Path(out_wav)
     raw = out_wav.with_name(out_wav.stem + "_raw.wav")
+    if voice not in OMNI_VOICES and voice not in GEMINI_VOICES:
+        voice = DEFAULT_VOICE   # e.g. a channel voice on a deployment without the voice server
     omni = voice in OMNI_VOICES
     post = OMNI_VOICES[voice][1] if omni else None
     tempo = pace * (1.0 if omni else GEMINI_TEMPO)

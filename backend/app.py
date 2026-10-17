@@ -1,4 +1,5 @@
 """HTTP API for the workspace UI."""
+import os
 import shutil
 import time
 from pathlib import Path
@@ -14,6 +15,19 @@ from .models import CastItem, Project, Scene, Source
 
 app = FastAPI(title="MitraField")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+PASSCODE = os.environ.get("STUDIO_PASSCODE", "")
+
+
+@app.middleware("http")
+async def guard_writes(request, call_next):
+    """On a public deployment, anyone can browse; generating or editing needs the passcode
+    (every write can spend API credits)."""
+    if PASSCODE and request.url.path.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
+        if request.headers.get("x-studio-pass") != PASSCODE:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "passcode required"}, status_code=401)
+    return await call_next(request)
 
 
 def friendly_error(e):
@@ -49,7 +63,7 @@ def media_url(p: Project):
 
 @app.get("/api/meta")
 def meta():
-    return {"engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
+    return {"locked": bool(PASSCODE), "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
                        "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}", "music": config.MODEL_MUSIC}}
 
