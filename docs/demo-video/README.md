@@ -1,6 +1,6 @@
 # Demo video
 
-`MitraField_Demo.mp4` (1:48, under the 3-minute limit) is the submission demo.
+`MitraField_Demo.mp4` (2:08, under the 3-minute limit) is the submission demo.
 
 It is built without any generative API calls: the narration is the local Johnny voice,
 the picture is Playwright recordings of the real app plus clips of videos MitraField rendered.

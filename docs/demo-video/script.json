@@ -11,13 +11,18 @@
  },
  {
   "id": "s3_ask",
-  "text": "With MitraField, you just ask. Type a question, pick a landscape video or a vertical short, choose a language and a narrator, and add your notes or a PDF as the source of truth.",
-  "dur": 11.01
+  "text": "With MitraField, you just ask. Type a question, pick a video or a vertical short, a language, a narrator and a look, and add your notes or a PDF as the source of truth.",
+  "dur": 10.41
  },
  {
   "id": "s4_director",
   "text": "A Gemini director agent writes the story beat by beat, and sends each beat to the engine that can show it truthfully. Facts, maps and math go to exact engines drawn by code. Mood and metaphor go to Nano Banana and Veo.",
   "dur": 13.7
+ },
+ {
+  "id": "s5_looks",
+  "text": "Choose from ten looks. Cinematic, editorial, woodblock, blueprint and more. Every engine follows the look, from the Veo shots to the charts and the maps.",
+  "dur": 9.72
  },
  {
   "id": "s5_cast",
@@ -26,8 +31,8 @@
  },
  {
   "id": "s6_engines",
-  "text": "There are ten engines. Gemini writes Manim code, renders it, and checks the frames. The globe uses real Natural Earth borders. Charts, timelines and flow diagrams are computed, never imagined.",
-  "dur": 12.21
+  "text": "There are eleven engines. Gemini writes motion scenes and Manim animations as code, renders them, and checks the frames. Maps use real borders. Charts, timelines and diagrams are computed, never imagined.",
+  "dur": 13.14
  },
  {
   "id": "s7_edit",
@@ -35,9 +40,14 @@
   "dur": 8.04
  },
  {
-  "id": "s8_results",
-  "text": "Each finished video comes with music, subtitles and a cost meter. A fifty second short costs about two dollars and renders in a few minutes, with no manual editing.",
-  "dur": 10.16
+  "id": "s8_translate",
+  "text": "One click makes another language. The narration is rewritten for natural Hindi or Nepali, every label is redrawn in the right script, and the pictures are reused, so a translation costs about thirty cents.",
+  "dur": 12.88
+ },
+ {
+  "id": "s9_results",
+  "text": "So far, ten finished videos, about a dollar each, rendered in minutes on one small server, with no manual editing.",
+  "dur": 7.31
  },
  {
   "id": "s9_close",
