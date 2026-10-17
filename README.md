@@ -32,10 +32,11 @@ Built for the **Google Cloud AI Builder Cup 2026** · Theme: **Media, Content & 
 | 5 | Edit one beat | You + director | Change a line, swap an engine, toggle cast, or say "show it on a map". Only that beat re-renders |
 | 6 | Assemble + translate | Lyria, ffmpeg | Topic-matched music ducked under the voice, -14 LUFS, subtitles; one-click language versions reuse the visuals |
 
-## Ten engines
+## Eleven engines
 
 | Engine | Kind | Shows |
 |---|---|---|
+| Motion scene | exact | Gemini writes an animated HTML/SVG scene in the project's look, rendered frame-exact in headless Chrome |
 | Math animation | exact | Gemini writes Manim code for the beat's exact duration, renders, repairs, checks frames |
 | Globe & maps | exact | Natural Earth borders on an orthographic globe: flights, highlights, pins, great-circle routes |
 | Data chart | exact | Bars that count up or a self-drawing trend line, from numbers in your sources |
@@ -43,12 +44,20 @@ Built for the **Google Cloud AI Builder Cup 2026** · Theme: **Media, Content & 
 | Flow diagram | exact | Steps and arrows as a sequence, a cycle or a tree |
 | Whiteboard | exact | Nano Banana line art drawn on stroke by stroke |
 | Kinetic type | exact | Hooks, definitions, key numbers |
-| Illustrated shots | generated | Nano Banana stills with smooth camera moves |
-| Guide character | generated | One recurring presenter, consistent across beats |
+| Cinematic shots | generated | Nano Banana stills in the project's look with smooth camera moves |
+| Presenter | generated | One recurring character, same design in every beat |
 | Veo shots | generated | Hero motion (max two per video), animated from on-model first frames |
 
 Adding a style is one file in `backend/engines/` implementing `render(scene, project, duration, out_dir)`;
 the director discovers it from its description.
+
+## Ten looks
+
+Every project picks an art direction: **Cinematic**, **Editorial flat**, **Premium 3D**, **Ink & wash**,
+**Motion graphics**, **Archival**, **Woodblock**, **Paper collage**, **Isometric** or **Blueprint**. A look sets
+the style of every generated image and its character rules (adult, on-model, never mascot-like), and gives
+the code-drawn engines its palette and paper texture, so the whole video matches. One shared guard keeps out
+the cheap AI-art feel.
 
 ## Cast & Sets
 
