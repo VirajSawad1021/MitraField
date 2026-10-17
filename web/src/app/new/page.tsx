@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Eyebrow, Field, Segmented, inputCls } from "@/components/ui";
 import { api, type Meta } from "@/lib/api";
 import { voiceGroups, voiceLabel } from "@/lib/voices";
+import { LookPicker } from "@/components/LookPicker";
 
 const EXAMPLES = [
   "Why does Japan have so few babies?",
@@ -40,6 +41,7 @@ function NewVideo() {
   const [audience, setAudience] = useState(AUDIENCES[0]);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [voice, setVoice] = useState("Johnny");
+  const [look, setLook] = useState("cinematic");
   useEffect(() => { api.meta().then(setMeta).catch(() => {}); }, []);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -50,7 +52,7 @@ function NewVideo() {
     setBusy(true);
     setErr(null);
     try {
-      const p = await api.create({ topic, notes, aspect, length, language, audience, voice });
+      const p = await api.create({ topic, notes, aspect, length, language, audience, voice, look });
       for (const f of files) await api.addFile(p.id, f);
       await api.storyboard(p.id);
       router.push(`/studio?p=${p.id}`);
@@ -109,6 +111,14 @@ function NewVideo() {
               <datalist id="aud">{AUDIENCES.map((a) => <option key={a} value={a} />)}</datalist>
             </Field>
           </div>
+
+          {meta?.looks && (
+            <div className="mt-6 border-t border-line pt-5">
+              <p className="text-[12px] font-semibold">Look</p>
+              <p className="mb-3 mt-0.5 text-[11px] text-muted">The art direction for every generated shot and character. Charts, maps and math stay exact in any look.</p>
+              <LookPicker looks={meta.looks} value={look} onChange={setLook} />
+            </div>
+          )}
         </Card>
 
         <Card className="p-5" id="sources">

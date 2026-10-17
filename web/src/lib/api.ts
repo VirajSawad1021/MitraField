@@ -11,7 +11,7 @@ export type Scene = {
 export type Source = { id: string; kind: 'note' | 'file' | 'link'; name: string; text: string }
 export type Cost = { total: number; by_kind: Record<string, number>; calls: number }
 export type Project = {
-  cost?: Cost; quality?: 'draft' | 'final'
+  cost?: Cost; quality?: 'draft' | 'final'; look?: string
   pace?: number
   id: string; title: string; topic: string; audience: string; language: string; aspect: '16:9' | '9:16'
   length: 'short' | 'medium' | 'long'; voice: string; music: boolean
@@ -19,7 +19,8 @@ export type Project = {
   character_url?: string | null; updated: number
 }
 export type EngineInfo = { name: string; label: string; blurb: string; precise: boolean }
-export type Meta = { locked?: boolean; engines: EngineInfo[]; voices: string[]; channel_voices: string[]; default_voice: string; models: Record<string, string> }
+export type LookInfo = { id: string; label: string; blurb: string }
+export type Meta = { locked?: boolean; looks?: LookInfo[]; engines: EngineInfo[]; voices: string[]; channel_voices: string[]; default_voice: string; models: Record<string, string> }
 export type ProjectRow = { id: string; title: string; topic: string; aspect: string; language: string; updated: number; render_status: string; scenes: number; cover: string | null; duration: number; engines: string[] }
 
 /* Public deployments ask for a passcode before anything that spends credits. */

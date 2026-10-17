@@ -5,6 +5,15 @@ import { Reveal } from "@/components/marketing/Reveal";
 import { Showcase } from "@/components/marketing/Showcase";
 import { ENGINES } from "@/lib/engines";
 
+const LOOKS: [string, string, string][] = [
+  ["cinematic", "Cinematic", "Photographic documentary realism, like a premium film series."],
+  ["editorial", "Editorial flat", "Clean flat vector illustration, like a top explainer studio."],
+  ["studio3d", "Premium 3D", "Polished stylised 3D, soft studio light, adult characters."],
+  ["ink", "Ink & wash", "Hand-inked line with watercolour wash, like a quality newspaper."],
+  ["motion", "Motion graphics", "Bold iconographic shapes, Swiss-design clean."],
+  ["archival", "Archival", "Period photographs and engravings with authentic grain."],
+];
+
 const BUILT_ON = ["Gemini 3.1 Pro", "Veo 3.1", "Nano Banana", "Lyria", "Gemini TTS", "Manim", "Natural Earth", "FastAPI", "Next.js", "Cloud Run"];
 
 const ENGINE_COPY: Record<string, { name: string; for: string; how: string }> = {
@@ -127,6 +136,33 @@ export default function Landing() {
               <p className="mt-2 text-[13px] leading-relaxed text-white/70">Every engine shares one contract: plan the beat, render it to the exact length. The director discovers new engines automatically.</p>
             </article>
           </Reveal>
+        </div>
+      </section>
+
+      {/* looks */}
+      <section className="mx-auto max-w-[1240px] px-5 py-16 sm:px-8">
+        <Reveal>
+          <h2 className="text-[36px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-[52px]">
+            One story, six looks.<br /><span className="text-[#9b988f]">Professional in every one.</span>
+          </h2>
+          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-body">
+            Pick an art direction per project. Characters stay adult and on-model, nothing looks like cheap AI art,
+            and the exact engines keep every number and map correct whatever the look.
+          </p>
+        </Reveal>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {LOOKS.map(([id, label, blurb], i) => (
+            <Reveal key={id} delay={i * 60}>
+              <figure className="overflow-hidden rounded-3xl border border-line bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/looks/${id}.jpg`} alt={label} className="aspect-video w-full object-cover" />
+                <figcaption className="px-5 py-4">
+                  <p className="text-[15px] font-semibold tracking-tight">{label}</p>
+                  <p className="mt-0.5 text-[13px] text-body">{blurb}</p>
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
         </div>
       </section>
 
