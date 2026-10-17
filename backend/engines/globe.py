@@ -269,7 +269,8 @@ class GlobeEngine(Engine):
                     ctx.arc(hx, hy, 7 * u, 0, 2 * math.pi)
                     rgba(ctx, ACCENT2)
                     ctx.fill()
-            # pins
+            # pins: labels are placed one by one and nudged down (or flipped left) when they would collide
+            placed = []
             for pn in pins:
                 a = ramp(f, pn["at"], pn["at"] + 0.06)
                 if a <= 0:
@@ -284,7 +285,23 @@ class GlobeEngine(Engine):
                 ctx.stroke()
                 ctx.arc(px, py, 9 * u, 0, 2 * math.pi)
                 ctx.fill()
-                text(ctx, clean(pn["label"]), px + 36 * u, py + 11 * u, 32 * u, INK, a, anchor="l")
+                lab = clean(pn["label"])
+                font_px = 32 * u
+                wlab = len(lab) * font_px * 0.55
+                # try right of the dot, then left, then step down; keep the first free spot
+                spots = [(px + 36 * u, py + 11 * u + k * font_px * 1.2, side) for k in range(5) for side in ("l", "r")]
+                spots = [(x if side == "l" else px - 36 * u, y, side) for x, y, side in spots]
+                lx, ly, anchor = spots[0]
+                for sx, sy, side in spots:
+                    x0 = sx if side == "l" else sx - wlab
+                    if x0 < 30 * u or x0 + wlab > W - 30 * u:
+                        continue
+                    if not any(abs(sy - qy) < font_px * 1.1 and x0 < qx1 and x0 + wlab > qx0 for qx0, qx1, qy in placed):
+                        lx, ly, anchor = sx, sy, side
+                        break
+                x0 = lx if anchor == "l" else lx - wlab
+                placed.append((x0, x0 + wlab, ly))
+                text(ctx, lab, lx, ly, font_px, INK, a, anchor=anchor)
             if caption:
                 text(ctx, caption, W / 2, H - 90 * u, 44 * u, INK, ramp(f, 0.05, 0.15), bold=True)
 
