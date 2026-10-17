@@ -48,18 +48,17 @@ class ImageEngine(Engine):
     params_schema = {
         "type": "object",
         "properties": {
-            "style": {"type": "string", "enum": list(STYLES)},
             "shots": {"type": "array", "description": "1 shot per ~5 seconds of narration, max 3", "items": {
                 "type": "object", "properties": {
                     "prompt": {"type": "string", "description": "concrete composition: subject, setting, framing, mood. No text."},
                     "move": {"type": "string", "enum": MOVES}},
                 "required": ["prompt", "move"]}},
         },
-        "required": ["style", "shots"],
+        "required": ["shots"],
     }
-    plan_guide = ("Shots should progress with the narration (e.g. wide establishing, then detail), framed like a "
-                  "documentary cinematographer would: real places, real objects, motivated light. Prefer 'cinematic', "
-                  "'photo' or 'archival'. No sci-fi holograms or glowing effects unless the topic is literally that. "
+    plan_guide = ("Shots should progress with the narration (e.g. wide establishing, then detail), framed with intent: "
+                  "a clear subject, a real place or object, motivated light. The project's look sets the art style, so "
+                  "describe content and composition only. No sci-fi holograms or glowing effects unless the topic is literally that. "
                   "Never ask for written words or logos.")
 
     def render(self, scene, project, duration, out_dir):
@@ -69,13 +68,13 @@ class ImageEngine(Engine):
         shots = shots[:n]
         refs = cast.refs_for(project, scene)
         # a project style overrides the per-shot style preset, so every shot shares one look
-        style = cast.style_item(project).description if cast.style_item(project) else STYLES.get(p.get("style"), CINEMATIC)
+        style = cast.style_item(project).description if cast.style_item(project) else None
         who = cast.describe(project, scene)
 
         def still(i):
             f = out_dir / f"still_{i}.png"
             if not f.exists():
-                gemini.image(finish(f"Film still. {shots[i]['prompt']}. {who}", style), f, aspect=project.aspect, refs=refs)
+                gemini.image(finish(f"{shots[i]['prompt']}. {who}", style, project.look), f, aspect=project.aspect, refs=refs)
             return f
 
         with ThreadPoolExecutor(3) as ex:

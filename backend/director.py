@@ -38,17 +38,15 @@ The brief for each scene describes concretely what the viewer SEES, in enough de
 
 Cast & sets (visual consistency across the whole video):
 - Define the recurring visual ingredients once: exactly 1 "style" (the art direction every generated shot
-  shares). Default to photographic, cinematic documentary realism, like a high-end film or a premium
-  documentary series: name the camera feel, lighting and colour grade, e.g. "cinematic documentary realism,
-  overcast natural light, cool desaturated grade, 35mm film grain". Never cartoon, chibi, anime or toy-like 3D
-  unless the user explicitly asks for illustration. 0-2
+  shares). It must be a specific, professional take on the project's chosen look (given in the prompt): name
+  the palette, lighting and texture for this topic. Never chibi, childish, mascot-like or glossy "AI art". 0-2
   "character" (a recurring guide or the person the story follows), 0-3 "location", 0-2 "object".
 - The main recurring subject (a ship, a building, a machine, a person the story follows) MUST be a cast item,
   as do places that are shown more than once. Define things that appear in 2+ generated beats, and the
   character used by the character engine.
 - Names are short and human-readable, e.g. "RMS Titanic", "Captain Smith", "Engine room", "Painterly night".
 - Descriptions are visual and specific (age, clothing, colours, materials, era), never abstract. Characters are
-  real-looking adults (a presenter, an expert, or the historical person the story follows), never mascots.
+  adults (a presenter, an expert, or the historical person the story follows), never mascots or children.
 - Each scene lists the names of the cast items visible in it (generative engines only; empty for exact engines).
 
 Engines:
@@ -94,7 +92,10 @@ def storyboard(p: Project) -> Project:
     schema = {**BOARD_SCHEMA}
     schema["properties"]["scenes"]["items"]["properties"]["engine"]["enum"] = list(engines.REGISTRY)
     parts, notes = source_parts(p)
+    from .look import get as get_look
+    lk = get_look(p.look)
     prompt = (f"Topic: {p.topic}\nAudience: {p.audience}\nNarration language: {p.language}\n"
+              f"Chosen look: {lk['label']}: {lk['image']}\n"
               f"Format: {p.aspect} ({'vertical Short' if p.aspect == '9:16' else 'landscape video'}), length {LENGTHS[p.length]}.\n"
               + (f"\nSource notes from the user:\n{notes}\n" if notes else "")
               + ("\nAttached files are sources too.\n" if parts else "")
