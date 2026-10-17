@@ -30,6 +30,14 @@ export const DEMOS: Demo[] = [
     route: ["image", "whiteboard", "character", "manim", "whiteboard", "image", "veo", "manim"],
     note: "A vertical Short made from the new-video form with a teacher's note as the source. Whiteboard sketches carry the process, the guide character plays detective with a wanted poster, and Manim plots the antibody surge.",
   },
+  {
+    id: "23aebfb0d5", tab: "History · Cast & Sets", aspect: "16:9",
+    prompt: "Why did the Titanic sink?",
+    video: "/demo/titanic.mp4", poster: "/demo/titanic.jpg",
+    beats: 8, exact: 4, length: "0:48", voice: "Johnny", renderTime: "about 9 minutes including drawing the cast",
+    route: ["image", "manim", "veo", "whiteboard", "character", "manim", "veo", "title"],
+    note: "The director defined a cast with the storyboard: the RMS Titanic, a guide character called Alex and one moody historical style. Every still and both Veo shots were drawn from those references, so the same ship appears throughout. The compartments are Manim, the flooding chain a whiteboard sketch.",
+  },
 ];
 
 export type Step = { title: string; who: string; body: string; points: string[]; shot: string; path: string };
