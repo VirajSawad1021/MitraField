@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data" / "projects"
+DATA = Path(os.environ.get("STUDIO_DATA", ROOT / "data" / "projects"))   # a Cloud Storage mount on Cloud Run
 ASSETS = ROOT / "assets"
 DATA.mkdir(parents=True, exist_ok=True)
 
@@ -25,7 +25,7 @@ MODEL_MUSIC = os.environ.get("STUDIO_MODEL_MUSIC", "lyria-3-clip-preview")
 
 # Manim lives in the channel venv; we call it as a subprocess.
 MANIM_PY = os.environ.get("STUDIO_MANIM_PY", str(ROOT.parent / "YT/ai_video_generator_gpu/venv/bin/python"))
-OMNI_URL = os.environ.get("STUDIO_OMNI_URL", "http://localhost:8002")   # OmniVoice TTS server
+OMNI_URL = os.environ.get("STUDIO_OMNI_URL", "http://localhost:8002")   # OmniVoice TTS server; empty = not available
 
 FPS = 30
 SIZES = {"16:9": (1920, 1080), "9:16": (1080, 1920)}

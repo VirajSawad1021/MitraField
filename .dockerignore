@@ -1,0 +1,11 @@
+.env
+.env.*
+.github_token
+.venv
+data
+scratch
+*.log
+web/node_modules
+web/.next
+web/out
+**/__pycache__
