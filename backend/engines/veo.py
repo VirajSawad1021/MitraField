@@ -1,6 +1,6 @@
 """Veo 3.1 hero shots. Expensive: the director uses it for at most 2 moments per video.
 Falls back to the image engine if generation fails or is filtered."""
-from .. import cast, gemini
+from .. import cast, config, gemini
 from .base import Engine
 
 
@@ -33,7 +33,10 @@ class VeoEngine(Engine):
                     gemini.image(f"Opening frame of this shot: {scene.params.get('prompt') or scene.brief}. "
                                  f"{cast.describe(project, scene)}Photographic, cinematic, no text.",
                                  first, aspect=project.aspect, refs=refs)
-            return gemini.video(prompt, out, aspect=project.aspect, seconds=8, image_path=first)
+            # pay only for what the beat needs: the shortest Veo length that covers it (with slow-motion headroom)
+            seconds = next((n for n in (4, 6, 8) if n * self.stretch_max >= duration), 8)
+            model = config.MODEL_VEO_DRAFT if project.quality == "draft" else config.MODEL_VEO
+            return gemini.video(prompt, out, aspect=project.aspect, seconds=seconds, image_path=first, model=model)
         except Exception as e:
             print(f"[veo] failed, falling back to image: {e}", flush=True)
             from . import REGISTRY

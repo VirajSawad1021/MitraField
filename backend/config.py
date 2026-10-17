@@ -20,6 +20,7 @@ MODEL_CODE = os.environ.get("STUDIO_MODEL_CODE", "gemini-3.5-flash")
 MODEL_IMAGE = os.environ.get("STUDIO_MODEL_IMAGE", "gemini-3.1-flash-image")
 MODEL_TTS = os.environ.get("STUDIO_MODEL_TTS", "gemini-3.8-flash-tts")
 MODEL_VEO = os.environ.get("STUDIO_MODEL_VEO", "veo-3.1-fast-generate-preview")
+MODEL_VEO_DRAFT = os.environ.get("STUDIO_MODEL_VEO_DRAFT", "veo-3.1-lite-generate-preview")
 MODEL_MUSIC = os.environ.get("STUDIO_MODEL_MUSIC", "lyria-3-clip-preview")
 
 # Manim lives in the channel venv; we call it as a subprocess.
