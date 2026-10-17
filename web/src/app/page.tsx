@@ -11,6 +11,9 @@ const ENGINE_COPY: Record<string, { name: string; for: string; how: string }> = 
   manim: { name: "Math animation", for: "Equations, graphs, geometry, algorithms", how: "Gemini writes Manim code for the exact narration length, renders it, then inspects the frames and repairs anything that overlaps." },
   globe: { name: "Globe & maps", for: "Places, routes, empires, migrations", how: "Natural Earth borders on a real orthographic globe. Camera flights, highlighted countries, pins and great-circle routes." },
   whiteboard: { name: "Whiteboard", for: "Processes, cause and effect, comparisons", how: "Nano Banana sketches clean line art, then MitraField draws it on stroke by stroke like a teacher at the board." },
+  chart: { name: "Data chart", for: "Comparisons, shares, rankings, trends", how: "Bars that grow and count up, or a line that draws the trend, from numbers taken from your sources. Every value is typeset by code." },
+  timeline: { name: "Timeline", for: "History, discoveries, sequences", how: "A time axis draws in and each event lands at its real date. Crowded dates spread out evenly so labels stay readable." },
+  flow: { name: "Flow diagram", for: "Processes, cycles, cause and effect", how: "Steps appear one at a time with arrows drawing between them, as a sequence, a loop or a branching tree." },
   title: { name: "Kinetic type", for: "Hooks, numbers, definitions", how: "One strong line, set in type that lands word by word on the beat. Always available as a safe fallback." },
   character: { name: "Guide character", for: "Analogies and 'imagine if' moments", how: "One recurring presenter, generated from a reference sheet so it looks the same in every scene." },
   image: { name: "Illustrated shots", for: "Settings, objects, history, metaphor", how: "Photo, editorial, atlas or 3D stills with smooth camera moves, cut into two or three shots on long beats." },
@@ -37,7 +40,7 @@ const VS: [string, string, string][] = [
 ];
 
 const FAQ = [
-  ["Is this just a video generator?", "No. Video generation is one of seven engines and is used sparingly. Most of an explainer is built by engines that cannot get facts wrong: code-driven math, real map data and typeset text."],
+  ["Is this just a video generator?", "No. Video generation is one of ten engines and is used sparingly. Most of an explainer is built by engines that cannot get facts wrong: code-driven math, real map data and typeset text."],
   ["Who is it for?", "Teachers turning a lesson into a video, creators running explainer channels, NGOs and newsrooms explaining a story in several languages, and anyone who learns better by watching."],
   ["Can I control what it makes?", "Every beat is editable: the line, the engine, the visual brief and the engine's own parameters. You can also just ask the director to rework a scene in plain words."],
   ["Which Google technology does it use?", "Gemini for directing, code and vision checks; Nano Banana for images and characters; Veo for video; Gemini TTS for narration; Lyria for music. The prototype runs on one server and is built to move to Cloud Run with media in Cloud Storage."],
@@ -89,7 +92,7 @@ export default function Landing() {
       <section id="engines" className="mx-auto max-w-[1240px] scroll-mt-20 px-5 py-16 sm:px-8">
         <Reveal>
           <h2 className="text-[36px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-[52px]">
-            Seven engines, one director.<br /><span className="text-[#9b988f]">Exact where it matters.</span>
+            Ten engines, one director.<br /><span className="text-[#9b988f]">Exact where it matters.</span>
           </h2>
         </Reveal>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -185,7 +188,7 @@ export default function Landing() {
                 <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-olive">One prompt · no edits</p>
                 <h2 className="mt-3 text-[30px] font-medium leading-[1.08] tracking-[-0.03em] sm:text-[38px]">The bottleneck of the world</h2>
                 <p className="mt-3 max-w-sm text-[14px] leading-relaxed text-ink/75">
-                  Nine beats, all seven engines: a globe that knows where Hormuz is, a bar chart computed by code, a whiteboard sketch,
+                  Nine beats across seven engines: a globe that knows where Hormuz is, a bar chart computed by code, a whiteboard sketch,
                   a recurring guide character and two Veo hero shots. Rendered unattended on a single small server.
                 </p>
                 <ul className="mt-5 space-y-1.5 text-[13px] text-ink/80">

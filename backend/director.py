@@ -28,6 +28,8 @@ Routing (the core of the product): pick the engine whose strengths match the bea
 - Vary the look: avoid the same engine more than twice in a row.
 - Text-only engines (title) are for short punchy beats only: one sentence, max 6 seconds.
 - Math, physics, geometry, graphs, equations, algorithms, data: always a precise engine, never a generated image.
+- Compared amounts or a trend over time go to chart; dated events go to timeline; processes, cycles and
+  cause-and-effect chains go to flow (or whiteboard when a friendly sketch suits better).
 - Video generation (veo) is expensive: use it for at most 2 hero moments, and NOT for scene 1 by default.
 - The opening should fit the topic: a real place opens on the globe, a math idea on a striking manim visual,
   a human story on the character or an image. Do not follow a fixed template (e.g. hook shot then title card).
