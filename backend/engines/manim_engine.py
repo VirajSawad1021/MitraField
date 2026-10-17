@@ -13,10 +13,23 @@ INK, MUTED, ACCENT, ACCENT2 = "{ink}", "{muted}", "{accent}", "{accent2}"
 FONT = "Inter"
 
 
+def _script_font(s):
+    """Noto family for non-Latin text (Inter has no Devanagari, CJK, ...)."""
+    for lo, hi, fam in [(0x0900, 0x097F, "Noto Sans Devanagari"), (0x0980, 0x09FF, "Noto Sans Bengali"),
+                        (0x0B80, 0x0BFF, "Noto Sans Tamil"), (0x0E00, 0x0E7F, "Noto Sans Thai"),
+                        (0x3040, 0x30FF, "Noto Sans JP"), (0xAC00, 0xD7AF, "Noto Sans KR"), (0x4E00, 0x9FFF, "Noto Sans SC")]:
+        if any(lo <= ord(c) <= hi for c in s):
+            return fam
+    return None
+
+
 class Text(Text):
-    """House text: Inter by default, never wider than the frame."""
+    """House text: Inter (or a Noto font for non-Latin scripts), never wider than the frame."""
 
     def __init__(self, *args, **kwargs):
+        fam = _script_font(str(args[0]) if args else "")
+        if fam:
+            kwargs["font"] = fam
         kwargs.setdefault("font", FONT)
         super().__init__(*args, **kwargs)
         max_w = config.frame_width - 0.8

@@ -20,6 +20,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY assets/fonts/ /usr/share/fonts/truetype/mitrafield/
+COPY deploy/fetch_fonts.sh /tmp/fetch_fonts.sh
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* && bash /tmp/fetch_fonts.sh /usr/share/fonts/truetype/noto-mitrafield
 RUN fc-cache -f
 COPY backend/ backend/
 COPY assets/ assets/

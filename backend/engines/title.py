@@ -41,17 +41,13 @@ class TitleEngine(Engine):
         def draw(ctx, t, W, H):
             if kicker:
                 text(ctx, kicker, W / 2, y0 - size * 1.25, 30 * u, ACCENT, ramp(t, 0, 0.4))
-            from .kit import font
-            font(ctx, size, "Fraunces")
-            widths = {}
-            for li, line in enumerate(lines):
-                widths[li] = ctx.text_extents(line).x_advance
-            space = ctx.text_extents("a a").x_advance - ctx.text_extents("aa").x_advance
+            from .kit import measure
+            widths = {li: measure(ctx, line, size, "Fraunces") for li, line in enumerate(lines)}
+            space = measure(ctx, "a a", size, "Fraunces") - measure(ctx, "aa", size, "Fraunces")
             xs = {li: W / 2 - widths[li] / 2 for li in widths}
             for i, (li, w) in enumerate(words):
                 k = ease_out((t - 0.15 - i * per) / 0.45)
-                font(ctx, size, "Fraunces")
-                adv = ctx.text_extents(w).x_advance
+                adv = measure(ctx, w, size, "Fraunces")
                 col = ACCENT if w.lower().strip(".,!?") in accents else INK
                 text(ctx, w, xs[li], y0 + li * lh + (1 - k) * 24 * u, size, col, k, "Fraunces", anchor="l")
                 xs[li] += adv + space
