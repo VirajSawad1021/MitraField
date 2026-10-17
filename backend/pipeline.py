@@ -65,28 +65,31 @@ def render_scene(pid, sid, force=False):
         refsig = cast.signature(p, s) if s.engine in ("image", "character", "veo") else []
         if s.engine == "veo" and p.quality == "draft":
             refsig = refsig + [["draft"]]   # draft and final Veo clips are cached separately
-        rh = h(s.engine, s.params, round(dur, 2), p.aspect, s.brief, *([refsig] if refsig else []))
+        look_key = [p.look] if p.look != "cinematic" else []   # cinematic keeps the original cache keys
+        rh = h(s.engine, s.params, round(dur, 2), p.aspect, s.brief, *([refsig] if refsig else []), *look_key)
         final = sdir(pid, sid) / f"clip_{rh}.mp4"
         if final.exists() and not force:
             set_scene(pid, sid, status="ready", clip=str(final), render_hash=rh)
             return
-        work = sdir(pid, sid) / f"r_{h(s.engine, s.params, p.aspect, s.brief, refsig) if refsig else h(s.engine, s.params, p.aspect, s.brief)}"
+        work = sdir(pid, sid) / f"r_{h(s.engine, s.params, p.aspect, s.brief, refsig, *look_key) if (refsig or look_key) else h(s.engine, s.params, p.aspect, s.brief)}"
         if force and work.exists():
             shutil.rmtree(work)
         work.mkdir(exist_ok=True)
         err = None
+        from .engines.kit import use_palette
         try:
-            if getattr(eng, "heavy", True):
-                with jobs.RENDER_LOCK:
+            with use_palette(p.look):   # code-drawn engines take the look's colours
+                if getattr(eng, "heavy", True):
+                    with jobs.RENDER_LOCK:
+                        raw = eng.render(s, p, dur, work)
+                else:
                     raw = eng.render(s, p, dur, work)
-            else:
-                raw = eng.render(s, p, dur, work)
         except Exception as e:
             traceback.print_exc()
             err = f"{s.engine} failed ({str(e)[:300]}); showing a title card instead"
             fb = engines.get("title")
             s2 = s.model_copy(update={"params": fb.plan(s, p)})
-            with jobs.RENDER_LOCK:
+            with jobs.RENDER_LOCK, use_palette(p.look):
                 raw = fb.render(s2, p, dur, work)
         media.fit(raw, final, dur, config.SIZES[p.aspect], stretch_max=getattr(eng, "stretch_max", 1.0))
         th = media.thumb(final, sdir(pid, sid) / f"thumb_{rh}.jpg")
