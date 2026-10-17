@@ -3,7 +3,7 @@ Every number comes from the plan (taken from the narration or sources), never fr
 import math
 
 from .base import Engine
-from .kit import ACCENT, ACCENT2, INK, MUTED, clean, ease, ease_out, ramp, render_frames, rgba, text
+from .kit import ACCENT, ACCENT2, INK, MUTED, clean, ease, ease_out, neutral, ramp, render_frames, rgba, text
 
 
 def fmt(v, unit=""):
@@ -75,7 +75,7 @@ class ChartEngine(Engine):
                 if k <= 0:
                     continue
                 y = top + row * i + (row - bh) / 2
-                col = ACCENT if b.get("highlight") else (0.42, 0.42, 0.41)
+                col = ACCENT if b.get("highlight") else neutral()
                 w = (x1 - x0) * (b["value"] / vmax) * k
                 ctx.rectangle(x0, y, max(2 * u, w), bh)
                 rgba(ctx, col, 1)

@@ -78,9 +78,11 @@ class WhiteboardEngine(Engine):
         canvas_g[y0:y0 + img.shape[0], x0:x0 + img.shape[1]] = img
         alpha = np.clip((200 - canvas_g.astype(float)) / 150, 0, 1)   # ink strength 0..1
         board = scene.params.get("board", "chalk")
-        if board == "chalk":
-            bg = np.array([int(c * 255) for c in hex_rgb(config.BG)], float)
-            ink = np.array([int(c * 255) for c in hex_rgb(config.INK)], float)
+        from ..look import palette
+        pal = palette(project.look)
+        if board == "chalk":   # the look's own ground and ink (paper looks become ink on paper)
+            bg = np.array([int(c * 255) for c in hex_rgb(pal["bg"])], float)
+            ink = np.array([int(c * 255) for c in hex_rgb(pal["ink"])], float)
         else:
             bg, ink = np.array([250, 250, 247], float), np.array([25, 25, 30], float)
         order = stroke_order((alpha > 0.15).astype(np.uint8))
@@ -88,7 +90,7 @@ class WhiteboardEngine(Engine):
         n = max(1, int(round(duration * config.FPS)))
         reveal = np.zeros((H, W), float)
         done = 0
-        tip_c = np.array([int(c * 255) for c in hex_rgb(config.ACCENT)], float)
+        tip_c = np.array([int(c * 255) for c in hex_rgb(pal["accent"])], float)
         with FrameWriter(out_dir / "clip.mp4", (W, H), "rgb24") as fw:
             for f in range(n):
                 t = f / config.FPS

@@ -38,6 +38,14 @@ export const DEMOS: Demo[] = [
     route: ["image", "manim", "veo", "whiteboard", "character", "manim", "veo", "title"],
     note: "The director defined a cast with the storyboard: the RMS Titanic, a 1912 shipbuilder called Thomas who presents, and one moody historical style. Every still and both Veo shots were drawn from those references, so the same ship appears throughout. The compartments are Manim, the flooding chain a whiteboard sketch.",
   },
+  {
+    id: "790e11f67a", tab: "Woodblock look", aspect: "16:9",
+    prompt: "How does a tsunami form, and why is it so different from a normal wave?",
+    video: "/demo/tsunami.mp4", poster: "/demo/tsunami.jpg",
+    beats: 7, exact: 5, length: "0:46", voice: "Johnny", renderTime: "about 7 minutes",
+    route: ["title", "scene", "manim", "globe", "image", "manim", "veo"],
+    note: "The Woodblock look carries through every engine: kinetic type, a code-drawn motion scene, Manim and the globe all render on paper in the print palette, and the still and the Veo wave are drawn in the same style. Draft mode, about one dollar.",
+  },
 ];
 
 export type Step = { title: string; who: string; body: string; points: string[]; shot: string; path: string };

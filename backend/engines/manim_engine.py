@@ -31,7 +31,7 @@ Hard rules:
 - Total animation time (sum of run_time values and self.wait calls) must be {dur:.1f} seconds. Pace the visuals to the narration:
   the first visual appears within 0.5 s, then build in step with what is being said. Never leave the screen static for more than 3 s; keep something gently moving.
 - Frame is {fw:.1f} x {fh:.1f} units ({aspect}). Keep every object inside x in [-{hx:.1f}, {hx:.1f}], y in [-{hy:.1f}, {hy:.1f}].
-- Background is near-black. Colors: INK (main), MUTED (secondary), ACCENT (orange highlight), ACCENT2 (blue). Use color with meaning.
+- The background colour is set for you. Colors: INK (main), MUTED (secondary), ACCENT (highlight), ACCENT2 (second accent). Use only these, with meaning; never hard-code WHITE or BLACK.
 - Text: Text(..., font=FONT). Math: MathTex. Max ~8 words per text line; on-screen text supports, never duplicates, the narration.
 - NO boxes, cards, rectangles or frames around text. NO em dashes. No titles at the top saying the topic.
 - Make it a real explanation: build the actual diagram, graph, equation, or geometry being described, with exact values.
@@ -81,7 +81,9 @@ class ManimEngine(Engine):
     def _render(self, code, project, out_dir):
         fw, fh = self.frame(project)
         W, H = self.size(project)
-        pre = PREAMBLE.format(bg=config.BG, ink=config.INK, muted=config.MUTED, accent=config.ACCENT, accent2=config.ACCENT2)
+        from ..look import palette
+        pal = palette(project.look)
+        pre = PREAMBLE.format(bg=pal["bg"], ink=pal["ink"], muted=pal["muted"], accent=pal["accent"], accent2=pal["accent2"])
         if project.aspect == "9:16":
             pre += "config.frame_width, config.frame_height = 8.0, 14.222\n"
         out_dir = out_dir.resolve()

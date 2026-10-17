@@ -204,7 +204,7 @@ class GlobeEngine(Engine):
             cam = cam_at(f)
             # ocean disc
             ctx.arc(cam.cx, cam.cy, cam.R, 0, 2 * math.pi)
-            ctx.set_source_rgba(1, 1, 1, 0.025)
+            rgba(ctx, INK, 0.035)
             ctx.fill_preserve()
             rgba(ctx, INK, 0.25)
             ctx.set_line_width(2 * u)
@@ -221,7 +221,7 @@ class GlobeEngine(Engine):
             for polys in countries.values():
                 for poly in polys:
                     fill_rings(ctx, cam, poly[:1])
-            ctx.set_source_rgba(1, 1, 1, 0.045)
+            rgba(ctx, INK, 0.06)
             ctx.fill()
             # coastlines + borders
             x, y, v = cam.proj(allpts)
