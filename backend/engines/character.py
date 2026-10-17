@@ -2,7 +2,7 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-from .. import gemini, store
+from .. import cast, gemini, store
 from .base import Engine
 from .image import XF, chain
 from .motion import MOVES, camera
@@ -42,8 +42,22 @@ class CharacterEngine(Engine):
         "required": ["shots"],
     }
 
+    def refs(self, scene, project):
+        """Cast references when the project has a cast; the legacy single reference sheet otherwise."""
+        refs = cast.refs_for(project, scene)
+        if not any("(character)" in label for label, _ in refs):
+            main = cast.main_character(project)
+            if main and main.image:
+                refs.insert(0, (f"{main.name} (character). Keep its exact design", main.image))
+        if not any("(character)" in label for label, _ in refs):
+            refs.insert(0, ("the guide character. Keep its exact design", str(reference(project))))
+        return refs
+
     def render(self, scene, project, duration, out_dir):
-        ref = reference(project)
+        refs = self.refs(scene, project)
+        style = (f"Art style: {cast.style_item(project).description}" if cast.style_item(project)
+                 else f"Style: {CHAR_STYLE}")
+        who = cast.describe(project, scene)
         shots = (scene.params.get("shots") or [{"action": scene.brief, "setting": "", "move": "push_in"}])[:2]
         n = max(1, min(len(shots), int(duration // 5) or 1))
         shots = shots[:n]
@@ -53,8 +67,8 @@ class CharacterEngine(Engine):
             if not f.exists():
                 sh = shots[i]
                 gemini.image(f"The exact same character as in the reference image (same design, colors, proportions), "
-                             f"{sh['action']}. Setting: {sh['setting']}. Style: {CHAR_STYLE}, full illustrated scene, "
-                             f"character clearly visible, no text, no speech bubbles.", f, aspect=project.aspect, refs=[ref])
+                             f"{sh['action']}. Setting: {sh['setting']}. {who}{style}. Full illustrated scene, "
+                             f"character clearly visible, no text, no speech bubbles.", f, aspect=project.aspect, refs=refs)
             return f
 
         with ThreadPoolExecutor(2) as ex:

@@ -1,6 +1,6 @@
 """Veo 3.1 hero shots. Expensive: the director uses it for at most 2 moments per video.
 Falls back to the image engine if generation fails or is filtered."""
-from .. import config, gemini
+from .. import cast, gemini
 from .base import Engine
 
 
@@ -24,8 +24,16 @@ class VeoEngine(Engine):
         if out.exists():
             return out
         prompt = (scene.params.get("prompt") or scene.brief) + " Cinematic, natural motion, no on-screen text, no subtitles, no logos."
+        refs = cast.refs_for(project, scene)
         try:
-            return gemini.video(prompt, out, aspect=project.aspect, seconds=8)
+            first = None
+            if refs:   # draw an on-model first frame with the cast references, then animate it
+                first = out_dir / "first_frame.png"
+                if not first.exists():
+                    gemini.image(f"Opening frame of this shot: {scene.params.get('prompt') or scene.brief}. "
+                                 f"{cast.describe(project, scene)}Photographic, cinematic, no text.",
+                                 first, aspect=project.aspect, refs=refs)
+            return gemini.video(prompt, out, aspect=project.aspect, seconds=8, image_path=first)
         except Exception as e:
             print(f"[veo] failed, falling back to image: {e}", flush=True)
             from . import REGISTRY
