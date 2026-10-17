@@ -6,6 +6,7 @@ import { ArrowRight, Check, Clock, Layers, ShieldCheck } from "lucide-react";
 import { SiteShell } from "@/components/marketing/Chrome";
 import { Reveal } from "@/components/marketing/Reveal";
 import { DEMOS, STEPS } from "@/lib/demo";
+import { EngineChip } from "@/components/EngineChip";
 import { engineStyle } from "@/lib/engines";
 
 export default function DemoPage() {
@@ -57,14 +58,7 @@ export default function DemoPage() {
                   {d.route.map((e, i) => <span key={i} className="flex-1" style={{ background: engineStyle(e).color }} />)}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {[...new Set(d.route)].map((e) => {
-                    const s = engineStyle(e);
-                    return (
-                      <span key={e} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: s.color }}>
-                        <s.icon className="h-3 w-3" />{s.short}
-                      </span>
-                    );
-                  })}
+                  {[...new Set(d.route)].map((e) => <EngineChip key={e} engine={e} />)}
                 </div>
                 <p className="mt-5 text-[13px] leading-relaxed text-body">{d.note}</p>
                 <p className="mt-4 text-[12px] text-muted">Narrated by {d.voice} · rendered in {d.renderTime} on one small server</p>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, CopyPlus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { Badge, Button, Card, Eyebrow, inputCls } from "@/components/ui";
 import { api, type Meta, type Project, type Scene } from "@/lib/api";
+import { EngineTile } from "@/components/EngineChip";
 import { engineStyle } from "@/lib/engines";
 import { SCENE_BUSY } from "@/lib/status";
 
@@ -79,7 +80,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
               return (
                 <button key={e.name} title={e.blurb} onClick={() => api.editScene(p.id, s.id, { engine: e.name }).then(setP)}
                   className={`flex flex-col items-center gap-1.5 rounded-xl border px-1 py-2.5 text-[10.5px] font-medium leading-tight transition-all ${on ? "border-ink bg-panel text-ink" : "border-line text-body hover:border-line-strong"}`}>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg text-white" style={{ background: es.color }}><es.icon className="h-3.5 w-3.5" /></span>
+                  <EngineTile engine={e.name} className="h-7 w-7" solid={on} />
                   {es.short}
                 </button>
               );

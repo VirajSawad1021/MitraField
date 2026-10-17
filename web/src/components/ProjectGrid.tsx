@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Clapperboard } from "lucide-react";
 import { Badge, Empty, LinkButton, Skeleton, fmtTime } from "@/components/ui";
 import { api, type ProjectRow } from "@/lib/api";
-import { engineStyle } from "@/lib/engines";
+import { EngineTile } from "@/components/EngineChip";
 import { statusTone } from "@/lib/status";
 
 function ago(t: number) {
@@ -47,10 +47,7 @@ export function ProjectGrid() {
               <p className="line-clamp-1 text-[16px] font-semibold tracking-tight">{r.title}</p>
               <p className="mt-1 text-[12px] text-muted">{r.aspect === "9:16" ? "Short" : "Landscape"} · {r.language || "English"} · {r.scenes} beats · {ago(r.updated)}</p>
               <div className="mt-3 flex gap-1">
-                {r.engines.map((e) => {
-                  const s = engineStyle(e);
-                  return <span key={e} title={s.short} className="flex h-6 w-6 items-center justify-center rounded-lg text-white" style={{ background: s.color }}><s.icon className="h-3 w-3" /></span>;
-                })}
+                {r.engines.map((e) => <EngineTile key={e} engine={e} />)}
               </div>
             </div>
           </Link>
