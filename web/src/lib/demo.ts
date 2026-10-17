@@ -26,9 +26,9 @@ export const DEMOS: Demo[] = [
     id: "ade6d28b73", tab: "Biology · Short", aspect: "9:16",
     prompt: "How does a vaccine teach your body to fight a virus?",
     video: "/demo/vaccine.mp4", poster: "/demo/vaccine.jpg",
-    beats: 8, exact: 4, length: "0:46", voice: "Johnny", renderTime: "about 7 minutes",
-    route: ["image", "whiteboard", "character", "manim", "whiteboard", "image", "veo", "manim"],
-    note: "A vertical Short made from the new-video form with a teacher's note as the source. Whiteboard sketches carry the process, the guide character plays detective with a wanted poster, and Manim plots the antibody surge.",
+    beats: 9, exact: 5, length: "0:54", voice: "Johnny", renderTime: "about 9 minutes",
+    route: ["image", "scene", "character", "manim", "whiteboard", "image", "veo", "manim", "character"],
+    note: "A vertical Short in the Editorial flat look. An immunologist presenter, Dr. Lena Park, is defined once in the cast and appears consistently; a code-drawn motion scene shows the immune system starting from scratch, and Manim plots the antibody surge. Charts, sketches and Manim all switch to the look's paper palette.",
   },
   {
     id: "23aebfb0d5", tab: "History · Cast & Sets", aspect: "16:9",
@@ -45,6 +45,14 @@ export const DEMOS: Demo[] = [
     beats: 7, exact: 5, length: "0:46", voice: "Johnny", renderTime: "about 7 minutes",
     route: ["title", "scene", "manim", "globe", "image", "manim", "veo"],
     note: "The Woodblock look carries through every engine: kinetic type, a code-drawn motion scene, Manim and the globe all render on paper in the print palette, and the still and the Veo wave are drawn in the same style. Draft mode, about one dollar.",
+  },
+  {
+    id: "d78bf2a264", tab: "Hindi translation", aspect: "16:9",
+    prompt: "Translate: The Bottleneck of the World",
+    video: "/demo/hormuz_hi.mp4", poster: "/demo/hormuz_hi.jpg",
+    beats: 9, exact: 5, length: "1:03", voice: "Johnny", renderTime: "a few minutes",
+    route: ["title", "globe", "veo", "whiteboard", "manim", "character", "globe", "veo", "image"],
+    note: "One click from the English Hormuz video. The director rewrote the narration for natural spoken Hindi, the narrator read it, and every on-screen label (kinetic type, map pins, the Manim chart) was re-rendered in Devanagari. Picture beats reused their finished shots, so nothing was regenerated.",
   },
 ];
 

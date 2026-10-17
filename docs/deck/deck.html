@@ -236,15 +236,16 @@
 <section class="slide">
   <p class="eyebrow">Results from the prototype</p>
   <h2 style="margin-top:20px">Finished explainers from a single prompt.</h2>
-  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:60px;gap:24px">
-    <div class="card" style="padding:40px"><div class="big">4</div><p style="margin-top:16px;font-size:22px">demo videos across geography, math, biology (vertical Short) and history</p></div>
-    <div class="card" style="padding:40px"><div class="big">4-8<span style="font-size:40px"> min</span></div><p style="margin-top:16px;font-size:22px">render time for a 45-50 s video on one small server, unattended</p></div>
-    <div class="card" style="padding:40px"><div class="big">~$2</div><p style="margin-top:16px;font-size:22px">API cost per short video with two Veo shots; about $0.60 without Veo; draft mode halves Veo</p></div>
-    <div class="card" style="padding:40px"><div class="big">50%</div><p style="margin-top:16px;font-size:22px">of beats on exact engines on average, so facts are computed, not generated</p></div>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:56px;gap:24px">
+    <div class="card" style="padding:36px"><div class="big">10</div><p style="margin-top:14px;font-size:21px">finished videos: geography, math, biology, history, tech, anatomy and earth science, in 3 looks and 3 languages</p></div>
+    <div class="card" style="padding:36px"><div class="big">2-9<span style="font-size:40px"> min</span></div><p style="margin-top:14px;font-size:21px">to render a 45-60 s video on one small server, unattended</p></div>
+    <div class="card" style="padding:36px"><div class="big" style="font-size:72px">$0.72-1.70</div><p style="margin-top:14px;font-size:21px">measured API cost per video, logged per call; a translation that reuses the shots cost $0.34</p></div>
+    <div class="card" style="padding:36px"><div class="big">56%</div><p style="margin-top:14px;font-size:21px">of all beats rendered by exact engines, so facts are computed, not generated</p></div>
   </div>
-  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:40px;gap:24px">
-    <img class="shot" src="img/04_inspector.webp" style="border:1px solid var(--line);height:340px;object-fit:cover;object-position:top">
-    <img class="shot" src="img/03_storyboard.webp" style="border:1px solid var(--line);height:340px;object-fit:cover;object-position:top">
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:30px;gap:20px">
+    <div><img class="shot" src="img/res_tsunami.jpg" style="height:250px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Woodblock look · tsunami</p></div>
+    <div><img class="shot" src="img/res_vaccine.jpg" style="height:250px;object-fit:cover;object-position:center 30%"><p style="font-size:18px;margin-top:8px">Editorial flat · vaccine Short with a cast presenter</p></div>
+    <div><img class="shot" src="img/res_hindi.jpg" style="height:250px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Hindi translation · labels re-rendered in Devanagari</p></div>
   </div>
   <div class="foot"><span>MitraField · costs from Google's published Gemini API rates, logged per call</span><span>9</span></div>
 </section>
