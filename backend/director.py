@@ -34,6 +34,17 @@ Routing (the core of the product): pick the engine whose strengths match the bea
 
 The brief for each scene describes concretely what the viewer SEES, in enough detail for a visual artist.
 
+Cast & sets (visual consistency across the whole video):
+- Define the recurring visual ingredients once: exactly 1 "style" (the art direction every generated shot
+  shares, e.g. "warm painterly editorial illustration, soft natural light, muted earthy palette"), 0-2
+  "character" (a recurring guide or the person the story follows), 0-3 "location", 0-2 "object".
+- The main recurring subject (a ship, a building, a machine, a person the story follows) MUST be a cast item,
+  as do places that are shown more than once. Define things that appear in 2+ generated beats, and the
+  character used by the character engine.
+- Names are short and human-readable, e.g. "RMS Titanic", "Captain Smith", "Engine room", "Painterly night".
+- Descriptions are visual and specific (age, clothing, colours, materials, era), never abstract.
+- Each scene lists the names of the cast items visible in it (generative engines only; empty for exact engines).
+
 Engines:
 {engines}
 """
@@ -43,12 +54,17 @@ BOARD_SCHEMA = {
     "type": "object",
     "properties": {
         "title": {"type": "string"},
+        "cast": {"type": "array", "items": {"type": "object", "properties": {
+            "kind": {"type": "string", "enum": ["style", "character", "location", "object"]},
+            "name": {"type": "string"},
+            "description": {"type": "string"}}, "required": ["kind", "name", "description"]}},
         "scenes": {"type": "array", "items": {"type": "object", "properties": {
             "narration": {"type": "string"},
             "engine": {"type": "string", "enum": None},
-            "brief": {"type": "string"}}, "required": ["narration", "engine", "brief"]}},
+            "brief": {"type": "string"},
+            "cast": {"type": "array", "items": {"type": "string"}}}, "required": ["narration", "engine", "brief"]}},
     },
-    "required": ["title", "scenes"],
+    "required": ["title", "cast", "scenes"],
 }
 
 
@@ -79,8 +95,11 @@ def storyboard(p: Project) -> Project:
               + "\nWrite the storyboard.")
     sysmsg = SYSTEM.format(engines=engine_menu())
     board = gemini.json_call(prompt, schema=schema, model=config.MODEL_DIRECTOR, system=sysmsg, parts=parts)
+    from . import cast as castmod
     p.title = board.get("title") or p.title
-    p.scenes = [Scene(narration=s["narration"].replace("—", ", "), engine=s["engine"], brief=s["brief"])
+    ids = castmod.merge(p, board.get("cast") or [])
+    p.scenes = [Scene(narration=s["narration"].replace("—", ", "), engine=s["engine"], brief=s["brief"],
+                      cast=[ids[n.lower()] for n in s.get("cast", []) if n.lower() in ids])
                 for s in board["scenes"]]
     return p
 
