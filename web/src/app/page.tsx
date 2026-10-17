@@ -15,8 +15,8 @@ const ENGINE_COPY: Record<string, { name: string; for: string; how: string }> = 
   timeline: { name: "Timeline", for: "History, discoveries, sequences", how: "A time axis draws in and each event lands at its real date. Crowded dates spread out evenly so labels stay readable." },
   flow: { name: "Flow diagram", for: "Processes, cycles, cause and effect", how: "Steps appear one at a time with arrows drawing between them, as a sequence, a loop or a branching tree." },
   title: { name: "Kinetic type", for: "Hooks, numbers, definitions", how: "One strong line, set in type that lands word by word on the beat. Always available as a safe fallback." },
-  character: { name: "Guide character", for: "Analogies and 'imagine if' moments", how: "One recurring presenter, generated from a reference sheet so it looks the same in every scene." },
-  image: { name: "Illustrated shots", for: "Settings, objects, history, metaphor", how: "Photo, editorial, atlas or 3D stills with smooth camera moves, cut into two or three shots on long beats." },
+  character: { name: "Presenter", for: "Human moments, experts, the person the story follows", how: "One real-looking person, cast once and filmed like a documentary, with the same face in every beat." },
+  image: { name: "Cinematic shots", for: "Places, objects, history, metaphor", how: "Photographic film stills in one consistent grade, with smooth camera moves, cut into two or three shots on long beats." },
   veo: { name: "Veo shots", for: "Hero moments with real motion", how: "Cinematic eight-second clips for at most two moments per video, with an automatic fallback if a clip is refused." },
 };
 
@@ -189,7 +189,7 @@ export default function Landing() {
                 <h2 className="mt-3 text-[30px] font-medium leading-[1.08] tracking-[-0.03em] sm:text-[38px]">The bottleneck of the world</h2>
                 <p className="mt-3 max-w-sm text-[14px] leading-relaxed text-ink/75">
                   Nine beats across seven engines: a globe that knows where Hormuz is, a bar chart computed by code, a whiteboard sketch,
-                  a recurring guide character and two Veo hero shots. Rendered unattended on a single small server.
+                  a recurring presenter and two Veo hero shots. Rendered unattended on a single small server.
                 </p>
                 <ul className="mt-5 space-y-1.5 text-[13px] text-ink/80">
                   {["Narration and visuals cut to the same beat", "Music bed ducked under the voice", "Subtitles exported alongside"].map((x) => (

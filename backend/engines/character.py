@@ -7,8 +7,9 @@ from .base import Engine
 from .image import XF, chain
 from .motion import MOVES, camera
 
-CHAR_STYLE = ("cute chibi 2D cartoon character, clean bold outlines, flat cel shading, big expressive eyes, "
-              "friendly, storybook quality")
+from ..look import CINEMATIC, finish
+
+CHAR_STYLE = CINEMATIC
 
 
 _lock = threading.Lock()
@@ -18,25 +19,25 @@ def reference(project):
     f = store.pdir(project.id) / "character.png"
     with _lock:
         if not f.exists():
-            gemini.image(f"Character reference sheet: one {CHAR_STYLE} guide character who would present a video about "
-                         f"'{project.topic}'. Full body, front view, neutral happy pose, plain light grey background, no text.",
-                         f, aspect="1:1")
+            gemini.image(finish(f"Portrait reference of one real-looking adult presenter for a documentary about "
+                                f"'{project.topic}': natural face, age-appropriate wardrobe, waist-up, neutral expression, "
+                                f"plain softly lit grey backdrop"), f, aspect="1:1")
     return f
 
 
 class CharacterEngine(Engine):
     name = "character"
     heavy = False
-    label = "Guide character"
-    blurb = ("The video's recurring chibi guide character (same look every time) reacting, pointing, or acting out "
-             "the idea inside a simple illustrated scene. Use for emotional beats, analogies, 'imagine you...' moments, "
-             "and to give the video a friendly face. Good every 4-6 scenes.")
+    label = "Presenter"
+    blurb = ("A recurring real-looking person (the same face every time), filmed like a documentary: a presenter, "
+             "an expert, or the person the story follows, acting out the idea in a real setting. Use for human "
+             "moments, analogies and 'imagine you...' beats. Good every 4-6 scenes.")
     params_schema = {
         "type": "object",
         "properties": {
             "shots": {"type": "array", "description": "1-2 shots", "items": {"type": "object", "properties": {
-                "action": {"type": "string", "description": "what the character does + expression, e.g. 'peers through a telescope, amazed'"},
-                "setting": {"type": "string", "description": "simple illustrated background that matches the beat"},
+                "action": {"type": "string", "description": "what the person does, with a natural expression, e.g. 'studies a cracked rivet under a desk lamp'"},
+                "setting": {"type": "string", "description": "a real, specific location and lighting that matches the beat"},
                 "move": {"type": "string", "enum": MOVES}}, "required": ["action", "setting", "move"]}},
         },
         "required": ["shots"],
@@ -55,8 +56,7 @@ class CharacterEngine(Engine):
 
     def render(self, scene, project, duration, out_dir):
         refs = self.refs(scene, project)
-        style = (f"Art style: {cast.style_item(project).description}" if cast.style_item(project)
-                 else f"Style: {CHAR_STYLE}")
+        style = cast.style_item(project).description if cast.style_item(project) else None
         who = cast.describe(project, scene)
         shots = (scene.params.get("shots") or [{"action": scene.brief, "setting": "", "move": "push_in"}])[:2]
         n = max(1, min(len(shots), int(duration // 5) or 1))
@@ -66,9 +66,9 @@ class CharacterEngine(Engine):
             f = out_dir / f"char_{i}.png"
             if not f.exists():
                 sh = shots[i]
-                gemini.image(f"The exact same character as in the reference image (same design, colors, proportions), "
-                             f"{sh['action']}. Setting: {sh['setting']}. {who}{style}. Full illustrated scene, "
-                             f"character clearly visible, no text, no speech bubbles.", f, aspect=project.aspect, refs=refs)
+                gemini.image(finish(f"Film still. The exact same person as in the reference image (same face, hair, build "
+                                    f"and wardrobe), {sh['action']}. Setting: {sh['setting']}. {who}Medium or medium-wide "
+                                    f"shot, the person clearly visible, candid and unposed", style), f, aspect=project.aspect, refs=refs)
             return f
 
         with ThreadPoolExecutor(2) as ex:

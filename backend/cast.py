@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import costs, gemini, store
+from .look import finish
 from .models import CastItem, Project, Scene
 
 _lock = threading.Lock()
@@ -18,10 +19,10 @@ _ensure_lock = threading.Lock()   # concurrent beats must not generate the same 
 PROMPTS = {
     "style": ("Style frame that defines the art direction for an explainer video about \"{t}\": {d}. "
               "Show a representative moment from that topic in this exact style. No text, no logos."),
-    "character": ("Character reference sheet for '{n}': {d}. Full body, front view, neutral friendly pose, "
-                  "plain light grey background, no text."),
-    "location": "Establishing shot of '{n}': {d}. No people in focus, no text.",
-    "object": "Reference image of '{n}': {d}. Centered on a plain light background, no text.",
+    "character": ("Casting reference portrait of '{n}': {d}. A real-looking person, waist-up, front view, natural "
+                  "expression, plain softly lit grey backdrop."),
+    "location": "Establishing shot of '{n}': {d}. No people in focus.",
+    "object": "Product-style reference photograph of '{n}': {d}. Whole object visible, plain softly lit backdrop.",
 }
 
 
@@ -43,7 +44,9 @@ def generate(pid, cid):
             refs.append(("the art style to match", st.image))
         out = store.pdir(pid) / "cast" / f"{cid}_{hashlib.sha1(item.description.encode()).hexdigest()[:6]}.png"
         aspect = "1:1" if item.kind in ("character", "object") else ("9:16" if p.aspect == "9:16" else "16:9")
-        gemini.image(PROMPTS[item.kind].format(n=item.name, d=item.description, t=p.topic), out, aspect=aspect, refs=refs)
+        prompt = PROMPTS[item.kind].format(n=item.name, d=item.description, t=p.topic)
+        style = st.description if (st and item.kind != "style") else (item.description if item.kind == "style" else None)
+        gemini.image(finish(prompt, style), out, aspect=aspect, refs=refs)
         store.mutate(pid, lambda pp: _set(pp, cid, image=str(out), status="ready"))
     except Exception as e:
         store.mutate(pid, lambda pp: _set(pp, cid, status="error", error=str(e)[:300]))

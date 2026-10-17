@@ -36,7 +36,7 @@ export const DEMOS: Demo[] = [
     video: "/demo/titanic.mp4", poster: "/demo/titanic.jpg",
     beats: 8, exact: 4, length: "0:48", voice: "Johnny", renderTime: "about 9 minutes including drawing the cast",
     route: ["image", "manim", "veo", "whiteboard", "character", "manim", "veo", "title"],
-    note: "The director defined a cast with the storyboard: the RMS Titanic, a guide character called Alex and one moody historical style. Every still and both Veo shots were drawn from those references, so the same ship appears throughout. The compartments are Manim, the flooding chain a whiteboard sketch.",
+    note: "The director defined a cast with the storyboard: the RMS Titanic, a 1912 shipbuilder called Thomas who presents, and one moody historical style. Every still and both Veo shots were drawn from those references, so the same ship appears throughout. The compartments are Manim, the flooding chain a whiteboard sketch.",
   },
 ];
 

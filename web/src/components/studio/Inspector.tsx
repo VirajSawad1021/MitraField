@@ -8,7 +8,7 @@ import { EngineTile } from "@/components/EngineChip";
 import { engineStyle } from "@/lib/engines";
 import { SCENE_BUSY } from "@/lib/status";
 
-const QUICK = ["Simpler, for a 12 year old", "Show it on a map", "Make it a math animation", "Draw it on the whiteboard", "Use the guide character", "Shorter", "More dramatic"];
+const QUICK = ["Simpler, for a 12 year old", "Show it on a map", "Make it a math animation", "Draw it on the whiteboard", "Use the presenter", "Shorter", "More dramatic"];
 
 export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; meta: Meta; setP: (p: Project) => void; close: () => void }) {
   const [narr, setNarr] = useState(s.narration);

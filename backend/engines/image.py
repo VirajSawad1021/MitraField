@@ -3,12 +3,15 @@ so a still never sits on screen for more than ~6 s."""
 from concurrent.futures import ThreadPoolExecutor
 
 from .. import cast, costs, gemini, media
+from ..look import CINEMATIC, finish
 from .base import Engine
 from .motion import MOVES, camera
 
 STYLES = {
-    "editorial": "cinematic editorial illustration, muted natural palette, soft directional light, painterly detail, no text",
-    "photo": "photorealistic documentary photograph, natural light, 35mm, shallow depth of field, no text, no watermark",
+    "cinematic": CINEMATIC,
+    "photo": "photorealistic documentary photograph, natural light, 35mm, shallow depth of field",
+    "archival": "authentic archival photograph of the era, period-correct film stock, grain and tonality, documentary framing",
+    "editorial": "high-end editorial illustration for a serious magazine, restrained palette, precise shapes",
     "atlas": "vintage atlas engraving, aged parchment, fine hatching, hand-tinted watercolor, no modern text",
     "diagram": "clean scientific illustration on a near-black background, thin precise lines, no text or labels",
     "3d": "clean stylised 3D render, soft studio lighting, dark seamless background, no text",
@@ -38,10 +41,10 @@ def chain(clips, out, durs):
 class ImageEngine(Engine):
     name = "image"
     heavy = False
-    label = "Illustrated shots"
-    blurb = ("Generated stills (photo, editorial illustration, vintage atlas, 3D) with slow camera moves, 1-3 shots "
-             "per scene. Use to SHOW a place, object, kind of person, historical setting or metaphor. "
-             "Not for exact numbers, diagrams with labels, or maps.")
+    label = "Cinematic shots"
+    blurb = ("Photographic film stills in the project's grade with slow camera moves, 1-3 shots per scene. Use to SHOW "
+             "a real place, object, kind of person, historical setting or visual metaphor. Not for exact numbers, "
+             "diagrams with labels, or maps.")
     params_schema = {
         "type": "object",
         "properties": {
@@ -54,8 +57,10 @@ class ImageEngine(Engine):
         },
         "required": ["style", "shots"],
     }
-    plan_guide = ("Shots should progress with the narration (e.g. wide establishing, then detail). "
-                  "Keep the same style and visual world across shots. Never ask for written words or logos.")
+    plan_guide = ("Shots should progress with the narration (e.g. wide establishing, then detail), framed like a "
+                  "documentary cinematographer would: real places, real objects, motivated light. Prefer 'cinematic', "
+                  "'photo' or 'archival'. No sci-fi holograms or glowing effects unless the topic is literally that. "
+                  "Never ask for written words or logos.")
 
     def render(self, scene, project, duration, out_dir):
         p = scene.params
@@ -64,13 +69,13 @@ class ImageEngine(Engine):
         shots = shots[:n]
         refs = cast.refs_for(project, scene)
         # a project style overrides the per-shot style preset, so every shot shares one look
-        style = "" if cast.style_item(project) else f"Style: {STYLES.get(p.get('style'), STYLES['editorial'])}."
+        style = cast.style_item(project).description if cast.style_item(project) else STYLES.get(p.get("style"), CINEMATIC)
         who = cast.describe(project, scene)
 
         def still(i):
             f = out_dir / f"still_{i}.png"
             if not f.exists():
-                gemini.image(f"{shots[i]['prompt']}. {who}{style} No text.", f, aspect=project.aspect, refs=refs)
+                gemini.image(finish(f"Film still. {shots[i]['prompt']}. {who}", style), f, aspect=project.aspect, refs=refs)
             return f
 
         with ThreadPoolExecutor(3) as ex:
