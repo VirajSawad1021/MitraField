@@ -23,3 +23,6 @@ frontend/out/
 # tool-generated agent notes
 web/CLAUDE.md
 web/next-env.d.ts
+
+# reference videos dropped in by hand
+/This video was made by Claude*
