@@ -45,8 +45,19 @@ async def s3(pg):   # new video form
     await pg.wait_for_timeout(600); await pg.click("text=Short"); await pg.wait_for_timeout(500); await pg.click("text=~1 min")
     await pg.wait_for_timeout(500)
     await pg.click("textarea >> nth=1")
-    await pg.keyboard.type("Focus on the rivets and the watertight compartments.", delay=35)
-    await pg.wait_for_timeout(int(S["s3_ask"] * 1000) - 6500)
+    await pg.keyboard.type("Focus on the watertight compartments.", delay=35)
+    await pg.wait_for_timeout(300)
+    y = await pg.evaluate("document.evaluate(\"//p[normalize-space()='Look']\", document, null, 9, null).singleNodeValue.getBoundingClientRect().top + scrollY - 160")
+    await smooth_scroll(pg, y, 1100)
+    await pg.click("text=Woodblock"); await pg.wait_for_timeout(int(S["s3_ask"] * 1000) - 7600)
+
+
+async def s5looks(pg):   # landing: ten looks grid
+    await pg.goto(B + "/"); await pg.wait_for_timeout(800)
+    y = await pg.evaluate("document.evaluate(\"//h2[contains(., 'ten looks')]\", document, null, 9, null).singleNodeValue.getBoundingClientRect().top + scrollY - 60")
+    await pg.evaluate(f"scrollTo(0, {y})"); await pg.wait_for_timeout(LEAD * 1000)
+    await smooth_scroll(pg, y + 700, 3800)
+    await pg.wait_for_timeout(1500)
 
 
 async def s4(pg):   # studio storyboard + routing
@@ -79,7 +90,7 @@ async def s7(pg):   # edit a beat
 async def s8(pg):   # demo page with results
     await pg.goto(B + "/demo/"); await pg.wait_for_timeout(LEAD * 1000)
     await smooth_scroll(pg, 430, 1500); await pg.wait_for_timeout(1200)
-    await pg.click("text=Math · Fourier"); await pg.wait_for_timeout(1500)
+    await pg.click("text=Woodblock look"); await pg.wait_for_timeout(1500)
     await pg.click("text=Biology · Short"); await pg.wait_for_timeout(1800)
 
 
@@ -92,7 +103,7 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         only = sys.argv[2:]
-        for name, fn in [("s2_problem", s2), ("s3_ask", s3), ("s4_director", s4), ("s5_cast", s5), ("s7_edit", s7), ("s8_results", s8), ("s9_close", s9)]:
+        for name, fn in [("s2_problem", s2), ("s3_ask", s3), ("s4_director", s4), ("s5_looks", s5looks), ("s5_cast", s5), ("s7_edit", s7), ("s9_results", s8), ("s9_close", s9)]:
             if only and name not in only:
                 continue
             await section(browser, name, fn)

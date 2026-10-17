@@ -21,29 +21,38 @@ def cat(parts, out):
     run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", out]); return out
 dur = {k: v["dur"] + GAP for k, v in S.items()}
 rec = lambda n: str(D / "rec" / f"{n}.webm")
+proj_ids = json.load(open(D / "ids.json"))
+TS, HI = proj(proj_ids["tsunami"]), proj(proj_ids["hindi"])
 secs = []
 secs.append(seg(hormuz_final, 0, dur["s1_hook"], W / "s1.mp4"))
 for n in ["s2_problem", "s3_ask", "s4_director"]:
     secs.append(seg(rec(n), 2.0, dur[n], W / f"{n}.mp4"))
+# looks: the grid, then the same engines in two looks
+d5 = dur["s5_looks"]; g = 4.2; r = (d5 - g) / 2
+ts_wave = [s for s in TS["scenes"] if s["engine"] == "veo"][0]
+secs.append(cat([seg(rec("s5_looks"), 2.0, g, W / "s5la.mp4"), seg(ts_wave["clip"], 0.5, r, W / "s5lb.mp4"),
+                 seg(vaccine_final, 12.0, r, W / "s5lc.mp4", fit="pad")], W / "s5l.mp4"))
 # cast: UI clicks, then the same ship across beats
 d5 = dur["s5_cast"]; ui = 5.6; rest = (d5 - ui) / 3
 img = next(s for s in T["scenes"] if s["engine"] == "image"); veos = [s for s in T["scenes"] if s["engine"] == "veo"]
-p5 = [seg(rec("s5_cast"), 2.0, ui, W / "s5a.mp4"), seg(img["clip"], 0.5, rest, W / "s5b.mp4"),
-      seg(veos[0]["clip"], 0.3, rest, W / "s5c.mp4"), seg(veos[1]["clip"], 0.3, rest, W / "s5d.mp4")]
-secs.append(cat(p5, W / "s5.mp4"))
-# engines montage
+secs.append(cat([seg(rec("s5_cast"), 2.0, ui, W / "s5a.mp4"), seg(img["clip"], 0.5, rest, W / "s5b.mp4"),
+                 seg(veos[0]["clip"], 0.3, rest, W / "s5c.mp4"), seg(veos[1]["clip"], 0.3, rest, W / "s5d.mp4")], W / "s5.mp4"))
+# engines montage: motion scene, Manim, globe, chart, flow
 d6 = dur["s6_engines"] / 5
 manim = [s for s in F["scenes"] if s["engine"] == "manim"][0]; globe = [s for s in H["scenes"] if s["engine"] == "globe"][1]
-p6 = [seg(manim["clip"], 0.8, d6, W / "s6a.mp4"), seg(globe["clip"], 1.5, d6, W / "s6b.mp4"),
-      seg("scratch/eng2/chart_bar_16x9/clip.mp4", 0.5, d6, W / "s6c.mp4"), seg("scratch/eng2/timeline_16x9/clip.mp4", 1.0, d6, W / "s6d.mp4"),
-      seg("scratch/eng2/flow_16x9/clip.mp4", 2.0, d6, W / "s6e.mp4")]
-secs.append(cat(p6, W / "s6.mp4"))
+ts_scene = [s for s in TS["scenes"] if s["engine"] == "scene"][0]
+secs.append(cat([seg(ts_scene["clip"], 0.5, d6, W / "s6a.mp4"), seg(manim["clip"], 0.8, d6, W / "s6b.mp4"),
+                 seg(globe["clip"], 1.5, d6, W / "s6c.mp4"), seg("scratch/eng2/chart_bar_16x9/clip.mp4", 0.5, d6, W / "s6d.mp4"),
+                 seg("scratch/eng2/flow_16x9/clip.mp4", 2.0, d6, W / "s6e.mp4")], W / "s6.mp4"))
 secs.append(seg(rec("s7_edit"), 2.0, dur["s7_edit"], W / "s7.mp4"))
-d8 = dur["s8_results"]; a8 = 6.0
-presenter = [s for s in H["scenes"] if s["engine"] == "character"][0]
-secs.append(cat([seg(rec("s8_results"), 2.0, a8, W / "s8a.mp4"), seg(presenter["clip"], 0.5, d8 - a8, W / "s8b.mp4")], W / "s8.mp4"))
+# translation: Hindi title, Hindi map, a reused picture beat
+d8 = dur["s8_translate"] / 3
+hs = HI["scenes"]
+secs.append(cat([seg(hs[0]["clip"], 1.0, d8, W / "s8a.mp4"), seg(hs[1]["clip"], 2.0, d8, W / "s8b.mp4"),
+                 seg(HI["render_path"], 31.0, d8, W / "s8c.mp4")], W / "s8.mp4"))
+secs.append(seg(rec("s9_results"), 2.0, dur["s9_results"], W / "s9r.mp4"))
 secs.append(seg(rec("s9_close"), 2.0, dur["s9_close"], W / "s9.mp4"))
-run(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", "scratch/deck/slide_12.png", "-t", "3.2",
+run(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", "scratch/deck/slide_13.png", "-t", "3.2",
      "-vf", "scale=1920:1080,fade=t=in:d=0.5,fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", W / "end.mp4"])
 secs.append(W / "end.mp4")
 video = cat(secs, W / "video.mp4")

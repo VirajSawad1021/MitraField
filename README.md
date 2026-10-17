@@ -18,7 +18,7 @@ Built for the **Google Cloud AI Builder Cup 2026** · Theme: **Media, Content & 
 | **Edit one beat in plain words** | **Live demo with real results** |
 | ![Edit a beat](docs/screens/edit-beat.webp) | ![Demo](docs/screens/demo.webp) |
 
-- **Demo video (1:48):** [`docs/demo-video/MitraField_Demo.mp4`](docs/demo-video/MitraField_Demo.mp4)
+- **Demo video (2:08):** [`docs/demo-video/MitraField_Demo.mp4`](docs/demo-video/MitraField_Demo.mp4)
 - **Deck (PDF):** [`docs/deck/MitraField_Deck.pdf`](docs/deck/MitraField_Deck.pdf)
 
 ## The flow
