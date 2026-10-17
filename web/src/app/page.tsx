@@ -12,6 +12,10 @@ const LOOKS: [string, string, string][] = [
   ["ink", "Ink & wash", "Hand-inked line with watercolour wash, like a quality newspaper."],
   ["motion", "Motion graphics", "Bold iconographic shapes, Swiss-design clean."],
   ["archival", "Archival", "Period photographs and engravings with authentic grain."],
+  ["woodblock", "Woodblock", "Japanese woodblock print on aged paper: flat colour, fine line, calm."],
+  ["collage", "Paper collage", "Paper cutouts, halftone dots and torn layers, crafted and tactile."],
+  ["isometric", "Isometric", "Clean isometric 3D diagrams: systems, cities and machines explained."],
+  ["blueprint", "Blueprint", "Technical line drawing on blueprint, precise and engineered."],
 ];
 
 const BUILT_ON = ["Gemini 3.1 Pro", "Veo 3.1", "Nano Banana", "Lyria", "Gemini TTS", "Manim", "Natural Earth", "FastAPI", "Next.js", "Cloud Run"];
@@ -20,6 +24,7 @@ const ENGINE_COPY: Record<string, { name: string; for: string; how: string }> = 
   manim: { name: "Math animation", for: "Equations, graphs, geometry, algorithms", how: "Gemini writes Manim code for the exact narration length, renders it, then inspects the frames and repairs anything that overlaps." },
   globe: { name: "Globe & maps", for: "Places, routes, empires, migrations", how: "Natural Earth borders on a real orthographic globe. Camera flights, highlighted countries, pins and great-circle routes." },
   whiteboard: { name: "Whiteboard", for: "Processes, cause and effect, comparisons", how: "Nano Banana sketches clean line art, then MitraField draws it on stroke by stroke like a teacher at the board." },
+  scene: { name: "Motion scene", for: "Concepts, mechanisms, stylish chapter moments", how: "Gemini writes an animated HTML and SVG scene in the project's look: layered illustration, parallax and kinetic type, rendered frame-exact in headless Chrome." },
   chart: { name: "Data chart", for: "Comparisons, shares, rankings, trends", how: "Bars that grow and count up, or a line that draws the trend, from numbers taken from your sources. Every value is typeset by code." },
   timeline: { name: "Timeline", for: "History, discoveries, sequences", how: "A time axis draws in and each event lands at its real date. Crowded dates spread out evenly so labels stay readable." },
   flow: { name: "Flow diagram", for: "Processes, cycles, cause and effect", how: "Steps appear one at a time with arrows drawing between them, as a sequence, a loop or a branching tree." },
@@ -49,7 +54,7 @@ const VS: [string, string, string][] = [
 ];
 
 const FAQ = [
-  ["Is this just a video generator?", "No. Video generation is one of ten engines and is used sparingly. Most of an explainer is built by engines that cannot get facts wrong: code-driven math, real map data and typeset text."],
+  ["Is this just a video generator?", "No. Video generation is one of eleven engines and is used sparingly. Most of an explainer is built by engines that cannot get facts wrong: code-driven math, real map data and typeset text."],
   ["Who is it for?", "Teachers turning a lesson into a video, creators running explainer channels, NGOs and newsrooms explaining a story in several languages, and anyone who learns better by watching."],
   ["Can I control what it makes?", "Every beat is editable: the line, the engine, the visual brief and the engine's own parameters. You can also just ask the director to rework a scene in plain words."],
   ["Which Google technology does it use?", "Gemini for directing, code and vision checks; Nano Banana for images and characters; Veo for video; Gemini TTS for narration; Lyria for music. The prototype runs on one server and is built to move to Cloud Run with media in Cloud Storage."],
@@ -101,7 +106,7 @@ export default function Landing() {
       <section id="engines" className="mx-auto max-w-[1240px] scroll-mt-20 px-5 py-16 sm:px-8">
         <Reveal>
           <h2 className="text-[36px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-[52px]">
-            Ten engines, one director.<br /><span className="text-[#9b988f]">Exact where it matters.</span>
+            Eleven engines, one director.<br /><span className="text-[#9b988f]">Exact where it matters.</span>
           </h2>
         </Reveal>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -129,7 +134,7 @@ export default function Landing() {
               </Reveal>
             );
           })}
-          <Reveal delay={420} className="sm:col-span-2 lg:col-span-2">
+          <Reveal delay={420} className="sm:col-span-2 lg:col-span-1">
             <article className="relative flex h-full min-h-[280px] flex-col justify-end overflow-hidden rounded-3xl p-6 text-white grain art-charcoal">
               <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-white/60">Plug-in engines</p>
               <p className="mt-2 text-[20px] font-medium leading-snug tracking-tight">A new visual style is one file.</p>
@@ -143,7 +148,7 @@ export default function Landing() {
       <section className="mx-auto max-w-[1240px] px-5 py-16 sm:px-8">
         <Reveal>
           <h2 className="text-[36px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-[52px]">
-            One story, six looks.<br /><span className="text-[#9b988f]">Professional in every one.</span>
+            One story, ten looks.<br /><span className="text-[#9b988f]">Professional in every one.</span>
           </h2>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-body">
             Pick an art direction per project. Characters stay adult and on-model, nothing looks like cheap AI art,
