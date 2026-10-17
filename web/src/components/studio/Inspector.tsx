@@ -87,6 +87,27 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
           </div>
           <p className="mt-2 text-[12px] leading-relaxed text-body">{meta.engines.find((e) => e.name === s.engine)?.blurb}</p>
         </div>
+        {st.kind === "generated" && (p.cast ?? []).some((c) => c.kind !== "style") && (
+          <div>
+            <Eyebrow>In this beat</Eyebrow>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {p.cast.filter((c) => c.kind !== "style").map((c) => {
+                const on = s.cast?.includes(c.id);
+                return (
+                  <button key={c.id} onClick={() => api.editScene(p.id, s.id, { cast: on ? (s.cast ?? []).filter((x) => x !== c.id) : [...(s.cast ?? []), c.id] }).then(setP)}
+                    className={`flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 text-[12px] transition-all ${on ? "border-ink bg-panel font-semibold text-ink" : "border-line text-body hover:border-line-strong"}`}>
+                    {c.image_url
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={c.image_url} alt="" className="h-6 w-6 rounded-full object-cover" />
+                      : <span className="h-6 w-6 rounded-full bg-panel-2" />}
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted">Selected items are drawn from their reference images in this beat.</p>
+          </div>
+        )}
         <div>
           <Eyebrow>What the viewer sees</Eyebrow>
           <textarea value={brief} onChange={(e) => setBrief(e.target.value)} onBlur={save} rows={3} className={`${inputCls} mt-2 resize-none text-[13px] leading-relaxed`} />

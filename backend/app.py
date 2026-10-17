@@ -9,8 +9,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import config, director, engines, jobs, pipeline, store, tts
-from .models import Project, Scene, Source
+from . import cast, config, director, engines, jobs, pipeline, store, tts
+from .models import CastItem, Project, Scene, Source
 
 app = FastAPI(title="MitraField")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -31,6 +31,8 @@ def media_url(p: Project):
     for s in d["scenes"]:
         s["clip_url"], s["thumb_url"], s["audio_url"] = u(s["clip"]), u(s["thumb"]), u(s["audio"])
     d["render_url"] = u(d["render_path"])
+    for c in d["cast"]:
+        c["image_url"] = u(c["image"])
     d["character_url"] = u(str(config.DATA / p.id / "character.png")) if (config.DATA / p.id / "character.png").exists() else None
     return d
 
@@ -126,6 +128,7 @@ def _storyboard(pid):
         p = director.storyboard(store.load(pid))
         p.render_status = "storyboard"
         store.save(p)
+        jobs.submit(f"cast {pid}", cast.ensure, pid)   # reference images are ready before the first render
     except Exception as e:
         store.mutate(pid, lambda p: (setattr(p, "render_status", "error"), setattr(p, "render_error", str(e)[:400])))
         raise
@@ -143,6 +146,58 @@ class SceneEdit(BaseModel):
     engine: str | None = None
     brief: str | None = None
     params: dict | None = None
+    cast: list[str] | None = None
+
+
+# ------------------------------------------------------------------ cast & sets
+
+class CastEdit(BaseModel):
+    kind: str | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+@app.post("/api/projects/{pid}/cast")
+def add_cast(pid: str, body: CastEdit):
+    item = CastItem(kind=body.kind or "character", name=body.name or "New", description=body.description or "")
+    store.mutate(pid, lambda p: p.cast.append(item))
+    jobs.submit(f"cast {item.id}", cast.generate, pid, item.id)
+    return media_url(store.mutate(pid, lambda p: cast._set(p, item.id, status="generating")))
+
+
+@app.patch("/api/projects/{pid}/cast/{cid}")
+def edit_cast(pid: str, cid: str, body: CastEdit):
+    changes = body.model_dump(exclude_none=True)
+    p = get(pid)
+    old = next((c for c in p.cast if c.id == cid), None)
+    if not old:
+        raise HTTPException(404, "cast item not found")
+    redraw = "description" in changes and changes["description"] != old.description
+    store.mutate(pid, lambda pp: cast._set(pp, cid, **changes))
+    if redraw:
+        jobs.submit(f"cast {cid}", cast.generate, pid, cid)
+    return media_url(get(pid))
+
+
+@app.post("/api/projects/{pid}/cast/{cid}/generate")
+def regen_cast(pid: str, cid: str):
+    jobs.submit(f"cast {cid}", cast.generate, pid, cid)
+    return media_url(store.mutate(pid, lambda p: cast._set(p, cid, status="generating")))
+
+
+@app.post("/api/projects/{pid}/cast/generate")
+def gen_all_cast(pid: str):
+    jobs.submit(f"cast all {pid}", cast.ensure, pid)
+    return media_url(get(pid))
+
+
+@app.delete("/api/projects/{pid}/cast/{cid}")
+def del_cast(pid: str, cid: str):
+    def f(p):
+        p.cast = [c for c in p.cast if c.id != cid]
+        for s in p.scenes:
+            s.cast = [x for x in s.cast if x != cid]
+    return media_url(store.mutate(pid, f))
 
 
 @app.patch("/api/projects/{pid}/scenes/{sid}")

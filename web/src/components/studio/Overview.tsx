@@ -82,7 +82,7 @@ export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; s
         <p className="mt-2 text-[11px] text-muted">New sources apply the next time you re-direct.</p>
       </Card>
 
-      {p.character_url && (
+      {p.character_url && !(p.cast ?? []).length && (
         <Card className="flex items-center gap-3 p-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={p.character_url} alt="Guide character" className="h-16 w-16 rounded-xl object-cover" />

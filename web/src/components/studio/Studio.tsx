@@ -8,6 +8,7 @@ import { api, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { PROJECT_BUSY, SCENE_BUSY, statusTone } from "@/lib/status";
 import { voiceGroups, voiceLabel } from "@/lib/voices";
+import { CastStrip } from "./CastStrip";
 import { Inspector } from "./Inspector";
 import { Overview } from "./Overview";
 import { SceneRow } from "./SceneRow";
@@ -26,7 +27,8 @@ export function Studio({ id }: { id: string }) {
   const refresh = useCallback(() => api.get(id).then(setP).catch((e) => setErr(String(e))), [id]);
   useEffect(() => { refresh(); api.meta().then(setMeta); }, [refresh]);
 
-  const busy = !!p && (PROJECT_BUSY.includes(p.render_status) || p.scenes.some((s) => SCENE_BUSY.includes(s.status)));
+  const busy = !!p && (PROJECT_BUSY.includes(p.render_status) || p.scenes.some((s) => SCENE_BUSY.includes(s.status))
+    || (p.cast ?? []).some((c) => c.status === "generating" || c.status === "pending"));
   useEffect(() => {
     if (!busy) return;
     const t = setInterval(refresh, 2000);
@@ -102,6 +104,7 @@ export function Studio({ id }: { id: string }) {
 
       {/* routing bar */}
       {p.scenes.length > 0 && <RouteBar p={p} sel={sel} setSel={setSel} />}
+      {p.scenes.length > 0 && <CastStrip p={p} setP={setP} />}
 
       <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
         <section className="min-w-0">
@@ -188,6 +191,7 @@ function Board({ p, sel, setSel, setP, engines }: {
     <div className="space-y-3">
       {p.scenes.map((s, i) => (
         <SceneRow key={s.id} s={s} i={i} aspect={p.aspect} on={sel === s.id} label={engines[s.engine]?.label}
+          cast={(p.cast ?? []).filter((c) => c.kind !== "style" && s.cast?.includes(c.id))}
           onClick={() => setSel(sel === s.id ? null : s.id)}
           onRender={() => api.renderScene(p.id, s.id).then(setP)}
           drag={{ draggable: true, onDragStart: () => setDragId(s.id), onDragOver: (e) => e.preventDefault(), onDrop: () => drop(s.id) }} />
