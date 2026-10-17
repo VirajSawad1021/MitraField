@@ -189,7 +189,7 @@ export default function Landing() {
                 <h2 className="mt-3 text-[30px] font-medium leading-[1.08] tracking-[-0.03em] sm:text-[38px]">The bottleneck of the world</h2>
                 <p className="mt-3 max-w-sm text-[14px] leading-relaxed text-ink/75">
                   Nine beats across seven engines: a globe that knows where Hormuz is, a bar chart computed by code, a whiteboard sketch,
-                  a recurring guide character and two Veo hero shots. Rendered unattended on a single small server.
+                  a recurring presenter and two Veo hero shots. Rendered unattended on a single small server.
                 </p>
                 <ul className="mt-5 space-y-1.5 text-[13px] text-ink/80">
                   {["Narration and visuals cut to the same beat", "Music bed ducked under the voice", "Subtitles exported alongside"].map((x) => (
