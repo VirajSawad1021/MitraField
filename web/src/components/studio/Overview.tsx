@@ -104,9 +104,9 @@ export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; s
       {p.character_url && !(p.cast ?? []).length && (
         <Card className="flex items-center gap-3 p-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.character_url} alt="Guide character" className="h-16 w-16 rounded-xl object-cover" />
+          <img src={p.character_url} alt="Presenter" className="h-16 w-16 rounded-xl object-cover" />
           <div>
-            <p className="text-[13px] font-semibold">Guide character</p>
+            <p className="text-[13px] font-semibold">Presenter</p>
             <p className="text-[12px] text-body">Same look in every beat it appears in.</p>
           </div>
         </Card>
