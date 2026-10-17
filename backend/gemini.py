@@ -58,8 +58,13 @@ def json_call(prompt, schema=None, model=None, system=None, parts=None, temperat
 
 
 def image(prompt, out, aspect="16:9", refs=(), model=None):
-    """Nano Banana. `refs` are image paths used for character/style consistency."""
-    parts = [types.Part.from_bytes(data=Path(p).read_bytes(), mime_type="image/png") for p in refs]
+    """Nano Banana. `refs` are image paths, or (label, path) pairs, used for consistency."""
+    parts = []
+    for r in refs:
+        label, path = r if isinstance(r, tuple) else (None, r)
+        if label:
+            parts.append(f"Reference image: {label}")
+        parts.append(types.Part.from_bytes(data=Path(path).read_bytes(), mime_type="image/png"))
     cfg = types.GenerateContentConfig(response_modalities=["IMAGE"],
                                       image_config=types.ImageConfig(aspect_ratio=aspect))
 

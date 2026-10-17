@@ -53,17 +53,21 @@ def ensure_plan(pid, sid):
 def render_scene(pid, sid, force=False):
     try:
         set_scene(pid, sid, status="rendering", error=None)
+        from . import cast
+        cast.ensure(pid, retry_errors=False)   # no-op once every reference image exists
         dur = ensure_audio(pid, sid)
         ensure_plan(pid, sid)
         p = store.load(pid)
         s = store.scene(p, sid)
         eng = engines.get(s.engine)
-        rh = h(s.engine, s.params, round(dur, 2), p.aspect, s.brief)
+        from . import cast
+        refsig = cast.signature(p, s) if s.engine in ("image", "character", "veo") else []
+        rh = h(s.engine, s.params, round(dur, 2), p.aspect, s.brief, *([refsig] if refsig else []))
         final = sdir(pid, sid) / f"clip_{rh}.mp4"
         if final.exists() and not force:
             set_scene(pid, sid, status="ready", clip=str(final), render_hash=rh)
             return
-        work = sdir(pid, sid) / f"r_{h(s.engine, s.params, p.aspect, s.brief)}"
+        work = sdir(pid, sid) / f"r_{h(s.engine, s.params, p.aspect, s.brief, refsig) if refsig else h(s.engine, s.params, p.aspect, s.brief)}"
         if force and work.exists():
             shutil.rmtree(work)
         work.mkdir(exist_ok=True)
@@ -98,6 +102,8 @@ def render_all(pid, assemble_after=True):
             s.status = "queued"
         pp.render_status = "rendering scenes"
     store.mutate(pid, mark)
+    from . import cast
+    cast.ensure(pid)
     with ThreadPoolExecutor(max_workers=3) as ex:
         list(ex.map(lambda sid: render_scene(pid, sid), todo))
     if assemble_after:

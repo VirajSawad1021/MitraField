@@ -11,12 +11,27 @@ def new_id():
 SceneStatus = Literal["draft", "queued", "rendering", "ready", "error"]
 
 
+CastKind = Literal["character", "location", "object", "style"]
+
+
+class CastItem(BaseModel):
+    """A Flow-style ingredient: defined once, referenced by every beat it appears in."""
+    id: str = Field(default_factory=new_id)
+    kind: CastKind = "character"
+    name: str
+    description: str = ""
+    image: Optional[str] = None
+    status: Literal["pending", "generating", "ready", "error"] = "pending"
+    error: Optional[str] = None
+
+
 class Scene(BaseModel):
     id: str = Field(default_factory=new_id)
     narration: str
     engine: str = "title"
     brief: str = ""
     params: dict[str, Any] = {}
+    cast: list[str] = []                   # CastItem ids that appear in this beat
     status: SceneStatus = "draft"
     duration: Optional[float] = None
     audio: Optional[str] = None
@@ -47,6 +62,7 @@ class Project(BaseModel):
     music: bool = True
     pace: float = 1.0   # extra tempo on top of each voice's own pacing
     sources: list[Source] = []
+    cast: list[CastItem] = []
     scenes: list[Scene] = []
     render_status: str = "idle"
     render_path: Optional[str] = None

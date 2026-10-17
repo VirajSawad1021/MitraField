@@ -2,7 +2,7 @@
 so a still never sits on screen for more than ~6 s."""
 from concurrent.futures import ThreadPoolExecutor
 
-from .. import gemini, media
+from .. import cast, gemini, media
 from .base import Engine
 from .motion import MOVES, camera
 
@@ -62,12 +62,15 @@ class ImageEngine(Engine):
         shots = (p.get("shots") or [{"prompt": p.get("prompt", scene.brief), "move": p.get("move", "push_in")}])[:3]
         n = max(1, min(len(shots), int(duration // 4.5) or 1))
         shots = shots[:n]
-        style = STYLES.get(p.get("style"), STYLES["editorial"])
+        refs = cast.refs_for(project, scene)
+        # a project style overrides the per-shot style preset, so every shot shares one look
+        style = "" if cast.style_item(project) else f"Style: {STYLES.get(p.get('style'), STYLES['editorial'])}."
+        who = cast.describe(project, scene)
 
         def still(i):
             f = out_dir / f"still_{i}.png"
             if not f.exists():
-                gemini.image(f"{shots[i]['prompt']}. Style: {style}.", f, aspect=project.aspect)
+                gemini.image(f"{shots[i]['prompt']}. {who}{style} No text.", f, aspect=project.aspect, refs=refs)
             return f
 
         with ThreadPoolExecutor(3) as ex:

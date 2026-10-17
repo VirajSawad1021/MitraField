@@ -3,12 +3,12 @@
 import { useRef } from "react";
 import { AlertTriangle, GripVertical, Loader2, Play } from "lucide-react";
 import { Badge } from "@/components/ui";
-import type { Scene } from "@/lib/api";
+import type { CastItem, Scene } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { SCENE_BUSY } from "@/lib/status";
 
-export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag }: {
-  s: Scene; i: number; aspect: string; on: boolean; label?: string;
+export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag, cast = [] }: {
+  s: Scene; i: number; aspect: string; on: boolean; label?: string; cast?: CastItem[];
   onClick: () => void; onRender: () => void; drag: React.HTMLAttributes<HTMLDivElement> & { draggable: boolean };
 }) {
   const v = useRef<HTMLVideoElement>(null);
@@ -48,6 +48,15 @@ export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag }: {
         </div>
         <p className="mt-2 line-clamp-2 text-[14px] leading-snug text-ink">{s.narration}</p>
         <p className="mt-1 line-clamp-1 text-[12px] text-muted">{s.brief}</p>
+        {cast.length > 0 && (
+          <div className="mt-2 flex items-center -space-x-1.5">
+            {cast.map((c) => c.image_url
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img key={c.id} src={c.image_url} alt={c.name} title={c.name} className="h-6 w-6 rounded-full border-2 border-white object-cover" />
+              : <span key={c.id} title={c.name} className="h-6 w-6 rounded-full border-2 border-white bg-panel-2" />)}
+            <span className="pl-3 text-[11px] text-muted">{cast.map((c) => c.name).join(", ")}</span>
+          </div>
+        )}
         {s.status === "draft" && s.clip_url === null && (
           <button onClick={(e) => { e.stopPropagation(); onRender(); }} className="mt-2 text-[12px] font-semibold text-ink underline underline-offset-2">Render this beat</button>
         )}
