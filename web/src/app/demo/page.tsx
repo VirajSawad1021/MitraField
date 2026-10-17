@@ -22,7 +22,7 @@ export default function DemoPage() {
           One question in.<br /><span className="text-[#9b988f]">A finished explainer out.</span>
         </h1>
         <p className="mt-5 max-w-[620px] text-[16px] leading-relaxed text-body animate-rise [animation-delay:120ms]">
-          Three videos made by MitraField from a single prompt each, with no manual editing. Below them, the exact steps
+          Four videos made by MitraField from a single prompt each, with no manual editing. Below them, the exact steps
           the app went through, captured from the real workspace.
         </p>
       </section>
