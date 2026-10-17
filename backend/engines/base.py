@@ -22,7 +22,8 @@ class Engine:
                   f"Engine: {self.blurb}\n{self.plan_guide}\n\n"
                   f"Video topic: {project.topic}\nAudience: {project.audience}\nAspect: {project.aspect}\n"
                   f"Narration for this scene (on-screen language: {project.language}):\n\"{scene.narration}\"\n"
-                  f"Visual brief: {scene.brief}\n\nReturn the engine parameters as JSON.")
+                  f"Visual brief: {scene.brief}\n\nAll words that appear on screen (titles, labels, captions) must be "
+                  f"written in {project.language}. Return the engine parameters as JSON.")
         return gemini.json_call(prompt, schema=self.params_schema, model=config.MODEL_FAST)
 
     def render(self, scene, project, duration: float, out_dir: Path) -> Path:

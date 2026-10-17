@@ -87,9 +87,93 @@ def font(ctx, size, family="Inter", bold=True):
     ctx.set_font_size(size)
 
 
+# ---- non-Latin scripts: cairo's toy text API has no font fallback or shaping, so text in
+# Devanagari, Tamil, Bengali, Thai or CJK is laid out with HarfBuzz (PIL + raqm) using Noto fonts.
+import os
+from functools import lru_cache
+from pathlib import Path
+
+_NOTO_DIRS = [Path.home() / ".local/share/fonts/noto", Path("/usr/share/fonts/truetype/noto-mitrafield")]
+_SCRIPTS = [((0x0900, 0x097F), "NotoSansDevanagari"), ((0x0980, 0x09FF), "NotoSansBengali"),
+            ((0x0B80, 0x0BFF), "NotoSansTamil"), ((0x0E00, 0x0E7F), "NotoSansThai"),
+            ((0x3040, 0x30FF), "NotoSansJP"), ((0xAC00, 0xD7AF), "NotoSansKR"), ((0x4E00, 0x9FFF), "NotoSansSC")]
+
+
+def needs_shaping(s):
+    return any(ord(ch) > 0x024F and not ch.isspace() for ch in s or "")
+
+
+def _noto_for(s):
+    codes = [ord(c) for c in s]
+    if any(0x3040 <= c <= 0x30FF for c in codes):
+        name = "NotoSansJP"
+    else:
+        name = next((n for (lo, hi), n in _SCRIPTS if any(lo <= c <= hi for c in codes)), "NotoSansSC")
+    for d in _NOTO_DIRS:
+        if (d / f"{name}.ttf").exists():
+            return str(d / f"{name}.ttf")
+    return None
+
+
+@lru_cache(maxsize=64)
+def _pil_font(path, size, bold):
+    from PIL import ImageFont
+    f = ImageFont.truetype(path, max(8, int(size)), layout_engine=ImageFont.Layout.RAQM)
+    try:
+        axes = f.get_variation_axes()
+        f.set_variation_by_axes([700 if bold and a.get("name", b"") in (b"Weight", "Weight") else a["default"] for a in axes])
+    except Exception:
+        pass
+    return f
+
+
+def measure(ctx, s, size, family="Inter", bold=True):
+    """Advance width of s in px, for any script."""
+    if needs_shaping(s):
+        path = _noto_for(s)
+        if path:
+            return _pil_font(path, size, bold).getlength(s)
+    font(ctx, size, family, bold)
+    return ctx.text_extents(s).x_advance
+
+
+def _shaped_text(ctx, s, x, y, size, color, alpha, bold, anchor):
+    from PIL import Image, ImageDraw
+    import numpy as np
+    path = _noto_for(s)
+    if not path:
+        return 0
+    f = _pil_font(path, size, bold)
+    l, t, r, b = f.getbbox(s, anchor="ls")
+    pad = int(size * 0.3)
+    w, h = int(r - l) + 2 * pad, int(b - t) + 2 * pad
+    img = Image.new("L", (max(1, w), max(1, h)), 0)
+    ImageDraw.Draw(img).text((pad - l, pad - t), s, font=f, fill=255, anchor="ls")
+    a = (np.asarray(img, np.float32) / 255.0) * alpha
+    rgb = [c for c in color]
+    buf = np.zeros((h, w, 4), np.uint8)
+    buf[..., 0] = (rgb[2] * 255 * a).astype(np.uint8)   # cairo ARGB32 is premultiplied BGRA
+    buf[..., 1] = (rgb[1] * 255 * a).astype(np.uint8)
+    buf[..., 2] = (rgb[0] * 255 * a).astype(np.uint8)
+    buf[..., 3] = (255 * a).astype(np.uint8)
+    stride = cairo.ImageSurface.format_stride_for_width(cairo.FORMAT_ARGB32, w)
+    data = bytearray(stride * h)
+    np.frombuffer(data, np.uint8).reshape(h, stride)[:, :w * 4] = buf.reshape(h, w * 4)
+    surf = cairo.ImageSurface.create_for_data(data, cairo.FORMAT_ARGB32, w, h, stride)
+    adv = f.getlength(s)
+    left = {"c": x - adv / 2, "l": x, "r": x - adv}[anchor]
+    ctx.save()
+    ctx.set_source_surface(surf, left + l - pad, y + t - pad)
+    ctx.paint()
+    ctx.restore()
+    return adv
+
+
 def text(ctx, s, x, y, size, color, alpha=1.0, family="Inter", bold=True, anchor="c"):
     if alpha <= 0 or not s:
         return 0
+    if needs_shaping(s):
+        return _shaped_text(ctx, s, x, y, size, color, alpha, bold, anchor)
     font(ctx, size, family, bold)
     e = ctx.text_extents(s)
     dx = {"c": -e.width / 2 - e.x_bearing, "l": -e.x_bearing, "r": -e.width - e.x_bearing}[anchor]
@@ -105,7 +189,7 @@ def wrap(ctx, s, size, max_w, family="Inter", bold=True):
     lines, cur = [], ""
     for w in s.split():
         t = (cur + " " + w).strip()
-        if cur and ctx.text_extents(t).x_advance > max_w:
+        if cur and measure(ctx, t, size, family, bold) > max_w:
             lines.append(cur)
             cur = w
         else:

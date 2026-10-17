@@ -352,6 +352,10 @@ def assemble(pid: str):
     return media_url(store.mutate(pid, lambda p: setattr(p, "render_status", "assembling")))
 
 
+# engines that put words on screen: re-planned and re-rendered in the new language
+TEXT_ENGINES = {"title", "manim", "globe", "chart", "timeline", "flow", "scene"}
+
+
 @costs.tracked
 def _translate(pid, language):
     src = store.load(pid)
@@ -361,14 +365,18 @@ def _translate(pid, language):
     p.id, p.title, p.language = new_id(), f"{src.title} ({language})", language
     p.render_status, p.render_path = "rendering scenes", None
     old_ids = [s.id for s in p.scenes]
+    src_clips = {x.id: x.clip for x in src.scenes}
     for s, line in zip(p.scenes, lines):
+        src_clip = src_clips.get(s.id)
         old = config.DATA / src.id / "scenes" / s.id
         new = new_id()
-        if old.exists() and s.engine not in ("title", "manim", "globe"):   # reuse generated stills / Veo shots
+        if old.exists() and s.engine not in TEXT_ENGINES:   # reuse generated stills / Veo shots
             shutil.copytree(old, config.DATA / p.id / "scenes" / new, ignore=shutil.ignore_patterns("clip_*", "voice_*", "thumb_*"))
         s.id, s.narration, s.audio, s.clip, s.thumb, s.status, s.narration_hash = new, line, None, None, None, "queued", None
-        if s.engine in ("title", "manim", "globe"):   # on-screen text must be re-planned in the new language
+        if s.engine in TEXT_ENGINES:   # on-screen text must be re-planned in the new language
             s.params = {}
+        elif src_clip and Path(src_clip).exists():   # pictures have no words: reuse the finished shot as is
+            s.params = {**s.params, "_reuse_clip": src_clip}
     store.save(p)
     pipeline.render_all(p.id)
 
