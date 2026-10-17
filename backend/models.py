@@ -60,6 +60,7 @@ class Project(BaseModel):
     length: Literal["short", "medium", "long"] = "medium"
     voice: str = "Johnny"
     music: bool = True
+    quality: Literal["draft", "final"] = "final"   # draft = cheaper Veo model for iterating
     pace: float = 1.0   # extra tempo on top of each voice's own pacing
     sources: list[Source] = []
     cast: list[CastItem] = []

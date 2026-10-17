@@ -59,6 +59,25 @@ export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; s
         )}
       </Card>
 
+      {!!p.cost?.calls && (
+        <Card className="p-4">
+          <Eyebrow>Cost so far</Eyebrow>
+          <p className="mt-2 text-[13px] text-body"><span className="text-[28px] font-semibold tracking-tight text-ink">${p.cost.total.toFixed(2)}</span> across {p.cost.calls} calls</p>
+          <ul className="mt-3 space-y-1.5">
+            {Object.entries(p.cost.by_kind).map(([k, v]) => (
+              <li key={k} className="flex items-center gap-2.5 text-[12px]">
+                <span className="w-14 shrink-0 capitalize text-ink">{k}</span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-panel-2">
+                  <span className="block h-full rounded-full bg-ink/70" style={{ width: `${(v / p.cost!.total) * 100}%` }} />
+                </span>
+                <span className="w-12 text-right tabular-nums text-body">${v.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] leading-snug text-muted">Estimated from Google&apos;s published rates. Draft mode renders Veo shots with Veo Lite at half the price.</p>
+        </Card>
+      )}
+
       <Card className="p-4">
         <Eyebrow>Sources</Eyebrow>
         <ul className="mt-2 space-y-1.5">

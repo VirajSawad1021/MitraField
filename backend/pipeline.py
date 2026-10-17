@@ -8,7 +8,7 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import config, director, engines, gemini, jobs, media, store, tts
+from . import config, costs, director, engines, gemini, jobs, media, store, tts
 
 
 def h(*parts):
@@ -50,6 +50,7 @@ def ensure_plan(pid, sid):
     return params
 
 
+@costs.tracked
 def render_scene(pid, sid, force=False):
     try:
         set_scene(pid, sid, status="rendering", error=None)
@@ -62,6 +63,8 @@ def render_scene(pid, sid, force=False):
         eng = engines.get(s.engine)
         from . import cast
         refsig = cast.signature(p, s) if s.engine in ("image", "character", "veo") else []
+        if s.engine == "veo" and p.quality == "draft":
+            refsig = refsig + [["draft"]]   # draft and final Veo clips are cached separately
         rh = h(s.engine, s.params, round(dur, 2), p.aspect, s.brief, *([refsig] if refsig else []))
         final = sdir(pid, sid) / f"clip_{rh}.mp4"
         if final.exists() and not force:
@@ -90,9 +93,11 @@ def render_scene(pid, sid, force=False):
         set_scene(pid, sid, status="ready", clip=str(final), thumb=str(th), render_hash=rh, error=err)
     except Exception as e:
         traceback.print_exc()
-        set_scene(pid, sid, status="error", error=str(e)[:500])
+        from .app import friendly_error
+        set_scene(pid, sid, status="error", error=friendly_error(e))
 
 
+@costs.tracked
 def render_all(pid, assemble_after=True):
     p = store.load(pid)
     todo = [s.id for s in p.scenes]
@@ -105,7 +110,7 @@ def render_all(pid, assemble_after=True):
     from . import cast
     cast.ensure(pid)
     with ThreadPoolExecutor(max_workers=3) as ex:
-        list(ex.map(lambda sid: render_scene(pid, sid), todo))
+        list(ex.map(costs.bind(lambda sid: render_scene(pid, sid)), todo))
     if assemble_after:
         assemble(pid)
 
@@ -143,6 +148,7 @@ def ensure_music(p):
     return f
 
 
+@costs.tracked
 def assemble(pid):
     store.mutate(pid, lambda p: setattr(p, "render_status", "assembling"))
     try:
