@@ -42,7 +42,7 @@ class TimelineEngine(Engine):
         if tall:   # vertical axis down the left third
             ax, a0, a1 = W * 0.26, H * 0.20, H * 0.86
         else:
-            ay, a0, a1 = H * 0.56, W * 0.10, W * 0.90
+            ay, a0, a1 = H * 0.56, W * 0.13, W * 0.87   # room for the end labels
         frac = [(e["year"] - y_lo) / span for e in ev]
         if len(ev) > 1 and min(b - a for a, b in zip(frac, frac[1:])) < 0.12:
             frac = [i / (len(ev) - 1) for i in range(len(ev))]   # crowded dates: even spacing, labels stay readable
