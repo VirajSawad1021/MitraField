@@ -88,6 +88,8 @@ done
 # The deploy gate mints an identity token for the worker (impersonating itself), and Cloud Build runs as the
 # default compute SA, which the deploy identity must be allowed to act as.
 gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --member="serviceAccount:$DEPLOY_SA" --role=roles/iam.serviceAccountTokenCreator >/dev/null
+ME="$(gcloud config get-value account 2>/dev/null)"   # whoever bootstraps (or deploys by hand) may mint the gate's token
+case "$ME" in *iam.gserviceaccount.com) ;; ?*) gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --member="user:$ME" --role=roles/iam.serviceAccountTokenCreator >/dev/null ;; esac
 gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --member="serviceAccount:$DEPLOY_SA" --role=roles/iam.serviceAccountUser >/dev/null
 # Cloud Build runs as the default compute SA: let it push images.

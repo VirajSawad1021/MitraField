@@ -72,8 +72,9 @@ for sa in "$TASKS_SA" "$DEPLOY_SA"; do
 done
 
 echo "== gate: worker selftest (Firestore round trip + a real Vertex AI call as the worker identity)"
-TOKEN="$(gcloud auth print-identity-token --impersonate-service-account="$DEPLOY_SA" --audiences="$WORKER_URL" 2>/dev/null \
-        || gcloud auth print-identity-token --audiences="$WORKER_URL")"
+# Always act as the deploy service account (a user account cannot mint a token for a custom audience, and the
+# worker checks the caller's email, which only --include-email puts in the token).
+TOKEN="$(gcloud auth print-identity-token --impersonate-service-account="$DEPLOY_SA" --audiences="$WORKER_URL" --include-email)"
 retry bash -c "curl -fsS -H 'Authorization: Bearer $TOKEN' '$(canary_url mitrafield-worker)/internal/selftest' | tee /dev/stderr | grep -q '\"firestore\":\"ok\"'" \
   || { echo "worker selftest FAILED; previous revision keeps serving"; exit 1; }
 promote mitrafield-worker
