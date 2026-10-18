@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import cast, config, costs, engines, jobs, log, pipeline, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
+from . import cast, config, costs, engines, factcheck, jobs, log, pipeline, qa, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
 from .models import CastItem, Project, Scene, Source
 
 log.setup()
@@ -98,6 +98,9 @@ def media_url(p: Project):
         s["clip_url"], s["thumb_url"], s["audio_url"] = u(s["clip"]), u(s["thumb"]), u(s["audio"])
     d["render_url"] = u(d["render_path"])
     d["cost"] = costs.summary(p.id)
+    if d.get("qa"):
+        d["qa"]["sheet_url"] = u(d["qa"].get("sheet"))
+        d["qa"]["stale"] = bool(d["qa"].get("render")) and d["qa"].get("render") != d["render_path"]
     for c in d["cast"]:
         c["image_url"] = u(c["image"])
     d["character_url"] = u(str(config.DATA / p.id / "character.png")) if (config.DATA / p.id / "character.png").exists() else None
@@ -377,6 +380,58 @@ def rewrite(pid: str, sid: str, body: dict):
     check_budget(pid)
     pipeline.set_scene(pid, sid, status="queued")
     jobs.enqueue("rewrite", pid=pid, sid=sid, instruction=body.get("instruction", ""))
+    return media_url(get(pid))
+
+
+@api.post("/api/projects/{pid}/qa")
+def run_qa(pid: str):
+    p = get(pid)
+    if not p.render_path:
+        raise HTTPException(400, "Render the video first.")
+    store.mutate(pid, lambda pp: setattr(pp, "qa", {"status": "queued"}))
+    jobs.enqueue("qa", pid=pid)
+    return media_url(get(pid))
+
+
+@api.post("/api/projects/{pid}/factcheck")
+def run_factcheck(pid: str):
+    if not get(pid).scenes:
+        raise HTTPException(400, "Write the storyboard first.")
+    store.mutate(pid, lambda pp: setattr(pp, "factcheck", {"status": "queued"}))
+    jobs.enqueue("factcheck", pid=pid)
+    return media_url(get(pid))
+
+
+@api.post("/api/projects/{pid}/factcheck/{index}/apply")
+def apply_correction(pid: str, index: int):
+    """The director rewrites the beat behind a flagged claim using the evidence; the beat re-renders."""
+    p = get(pid)
+    check_budget(pid)
+    claims = (p.factcheck or {}).get("claims") or []
+    if not 0 <= index < len(claims) or claims[index]["verdict"] not in factcheck.FLAG:
+        raise HTTPException(400, "Nothing to correct for this claim.")
+    c = claims[index]
+
+    def mark(pp):
+        pp.factcheck["claims"][index]["applied"] = True
+        store.scene(pp, c["sid"]).status = "queued"
+    store.mutate(pid, mark)
+    jobs.enqueue("rewrite", pid=pid, sid=c["sid"], instruction=factcheck.correction_instruction(c))
+    return media_url(get(pid))
+
+
+@api.post("/api/projects/{pid}/scenes/{sid}/fix")
+def fix_scene(pid: str, sid: str):
+    """Re-render a beat the quality check flagged, with its issues folded into the brief; the video is
+    re-assembled and checked again afterwards."""
+    p = get(pid)
+    check_budget(pid)
+    issues = ((p.qa or {}).get("beats") or {}).get(sid, {}).get("issues") or []
+    if not issues:
+        raise HTTPException(400, "This beat has no issues to fix.")
+    s = store.scene(p, sid)
+    pipeline.set_scene(pid, sid, brief=qa.fix_brief(s.brief, issues), params={}, status="queued")
+    jobs.enqueue("render_scene", pid=pid, sid=sid, force=True, then_assemble=True)
     return media_url(get(pid))
 
 

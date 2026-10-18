@@ -88,6 +88,18 @@ function NewVideo() {
             ))}
           </div>
 
+          <div className="mt-6 border-t border-line pt-5">
+            <p className="text-[12px] font-semibold">Direction <span className="font-normal text-muted">(optional)</span></p>
+            <p className="mb-3 mt-0.5 text-[11px] text-muted">Tell the director how to make it, in your own words. It follows this over its defaults, for example to use only manim or only text.</p>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={3} maxLength={MAX_INSTRUCTIONS}
+              placeholder="e.g. Use only manim animations. No generated images or video." className={`${inputCls} resize-none text-[13px]`} />
+            <div className="mt-2 flex flex-wrap gap-2">
+              {DIRECTIONS.map((x) => (
+                <button key={x} type="button" onClick={() => setInstructions(x)} className="rounded-full border border-line px-3 py-1 text-[12px] text-body transition-colors hover:border-line-strong hover:text-ink">{x}</button>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-6 grid gap-5 border-t border-line pt-5 sm:grid-cols-2">
             <Field label="Format">
               <Segmented value={aspect} onChange={setAspect} options={[
@@ -112,18 +124,6 @@ function NewVideo() {
               <input list="aud" value={audience} onChange={(e) => setAudience(e.target.value)} className={inputCls} />
               <datalist id="aud">{AUDIENCES.map((a) => <option key={a} value={a} />)}</datalist>
             </Field>
-          </div>
-
-          <div className="mt-6 border-t border-line pt-5">
-            <p className="text-[12px] font-semibold">Direction <span className="font-normal text-muted">(optional)</span></p>
-            <p className="mb-3 mt-0.5 text-[11px] text-muted">Tell the director how to make it, in your own words. It follows this over its defaults, for example to use only manim or only text.</p>
-            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={3} maxLength={MAX_INSTRUCTIONS}
-              placeholder="e.g. Use only manim animations. No generated images or video." className={`${inputCls} resize-none text-[13px]`} />
-            <div className="mt-2 flex flex-wrap gap-2">
-              {DIRECTIONS.map((x) => (
-                <button key={x} type="button" onClick={() => setInstructions(x)} className="rounded-full border border-line px-3 py-1 text-[12px] text-body transition-colors hover:border-line-strong hover:text-ink">{x}</button>
-              ))}
-            </div>
           </div>
 
           {meta?.looks && (

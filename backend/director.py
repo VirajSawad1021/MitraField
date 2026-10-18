@@ -5,6 +5,7 @@ from pathlib import Path
 from google.genai import types
 
 from . import config, engines, gemini
+from .guards import INJECTION_RULE
 from .models import Project, Scene
 
 LENGTHS = {"short": "45-60 seconds TOTAL (about 130 spoken words), 7-9 scenes of 1-2 short sentences, hook in the first 2 seconds",
@@ -56,6 +57,12 @@ binding and overrides the routing preferences above (including the limit on veo 
 engines). When it limits which engines or media to use (e.g. only manim, text only, no generated video or
 images), use only what it allows, for every beat. Facts, the output schema and the rules on narration still apply.
 
+Sources and safety:
+{injection}
+- Never script a real, identifiable person saying or doing something they did not. Quote real people only
+  with words they actually said, attributed. Generative beats never show a recognisable likeness of a real
+  person: use the people around them, places, objects, archival-style stand-ins or illustrations.
+
 Engines:
 {engines}
 """
@@ -84,14 +91,18 @@ def engine_menu():
 
 
 def source_parts(p: Project):
+    """Sources as model input, fenced as data (guards.py): files are labelled, notes are wrapped in markers
+    they cannot close, so instructions hidden in a source are never taken as requests."""
+    from . import guards
     parts, notes = [], []
-    for s in p.sources:
+    for i, s in enumerate(p.sources, 1):
         if s.kind == "file" and s.path and Path(s.path).exists():
             mime = mimetypes.guess_type(s.path)[0] or "application/octet-stream"
             if mime.startswith(("image/", "application/pdf", "text/", "audio/", "video/")):
+                parts.append(guards.file_label(s.name, i))
                 parts.append(types.Part.from_bytes(data=Path(s.path).read_bytes(), mime_type=mime))
         if s.text:
-            notes.append(f"[{s.name or s.kind}]\n{s.text}")
+            notes.append(guards.fence(s.name or s.kind, s.text, i))
     return parts, "\n\n".join(notes)
 
 
@@ -114,7 +125,7 @@ def storyboard(p: Project) -> Project:
               + (f"\nSource notes from the user:\n{notes}\n" if notes else "")
               + ("\nAttached files are sources too.\n" if parts else "")
               + "\nWrite the storyboard.")
-    sysmsg = SYSTEM.format(engines=engine_menu())
+    sysmsg = SYSTEM.format(engines=engine_menu(), injection=INJECTION_RULE)
     board = gemini.json_call(prompt, schema=schema, model=config.MODEL_DIRECTOR, system=sysmsg, parts=parts)
     from . import cast as castmod
     p.title = board.get("title") or p.title
@@ -134,7 +145,7 @@ def rewrite_scene(p: Project, scene: Scene, instruction: str) -> Scene:
               "required": ["narration", "engine", "brief"]}
     prompt = (f"Storyboard so far:\n{ctx}\n\nRewrite this scene:\n[{scene.engine}] {scene.narration}\nBrief: {scene.brief}\n\n"
               f"{direction(p)}Instruction from the user for this scene: {instruction}\nKeep it consistent with the scenes around it.")
-    r = gemini.json_call(prompt, schema=schema, model=config.MODEL_DIRECTOR, system=SYSTEM.format(engines=engine_menu()))
+    r = gemini.json_call(prompt, schema=schema, model=config.MODEL_DIRECTOR, system=SYSTEM.format(engines=engine_menu(), injection=INJECTION_RULE))
     scene.narration, scene.engine, scene.brief = r["narration"].replace("—", ", "), r["engine"], r["brief"]
     scene.params = {}
     return scene
