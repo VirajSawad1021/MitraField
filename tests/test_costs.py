@@ -58,3 +58,23 @@ def test_retry_retries_transient_errors(monkeypatch):
             raise RuntimeError("503")
         return "ok"
     assert gemini._retry(flaky) == "ok" and len(n) == 3
+
+
+def test_rate_limits_are_retried_longer_and_with_growing_waits(monkeypatch):
+    waits = []
+    monkeypatch.setattr(gemini.time, "sleep", waits.append)
+    n = []
+
+    def limited():
+        n.append(1)
+        if len(n) < 6:
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+        return "ok"
+    assert gemini._retry(limited) == "ok"
+    assert waits == [10, 20, 40, 60, 60]
+
+
+def test_rate_limit_gives_up_eventually(monkeypatch):
+    monkeypatch.setattr(gemini.time, "sleep", lambda s: None)
+    with pytest.raises(RuntimeError, match="429"):
+        gemini._retry(lambda: (_ for _ in ()).throw(RuntimeError("429 RESOURCE_EXHAUSTED")))

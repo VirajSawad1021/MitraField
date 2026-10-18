@@ -34,19 +34,28 @@ def client(model=None):
         return _clients[loc]
 
 
-def _retry(fn, tries=3):
-    """Retry rate limits and transient 5xx with backoff. A refused spend cap is never retried."""
+def _is_rate_limit(e):
+    return "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)
+
+
+def _retry(fn, tries=3, rate_tries=6):
+    """Retry transient 5xx quickly, and rate limits (per-minute quotas) patiently: 10, 20, 40, 60, 60 s.
+    A refused spend cap is never retried."""
     costs.guard()
-    for i in range(tries):
+    i = 0
+    while True:
         try:
             return fn()
         except costs.BudgetExceeded:
             raise
         except Exception as e:
-            if i == tries - 1:
+            i += 1
+            limit = rate_tries if _is_rate_limit(e) else tries
+            if i >= limit:
                 raise
-            logger.warning("retry %d: %s", i + 1, e, extra={"attempt": i + 1})
-            time.sleep(4 * (i + 1))
+            wait = min(60, 10 * 2 ** (i - 1)) if _is_rate_limit(e) else 4 * i
+            logger.warning("retry %d/%d in %ds: %s", i, limit - 1, wait, str(e)[:160], extra={"attempt": i})
+            time.sleep(wait)
 
 
 def text(prompt, model=None, system=None, parts=None, temperature=None):
