@@ -2,7 +2,7 @@
 # STUDIO_ROLE=worker runs render jobs). Built by Cloud Build; see docs/ARCHITECTURE.md.
 
 # ---- web: static export of the Next.js app
-FROM node:22-slim AS web
+FROM node:26-slim AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
