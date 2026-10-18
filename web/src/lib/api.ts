@@ -17,8 +17,10 @@ export type QaReport = {
   status: 'queued' | 'checking' | 'passed' | 'flagged' | 'error'; summary?: string; stale?: boolean; sheet_url?: string | null
   technical?: { check: string; ok: boolean; detail: string }[]; beats?: Record<string, { ok: boolean; issues: QaIssue[] }>; flagged?: string[]
 }
+export type Claim = { beat: number; sid?: string; claim: string; verdict: 'supported' | 'unsupported' | 'contradicted' | 'unverifiable'; evidence: string; correction: string; source: string; applied?: boolean }
+export type FactCheck = { status: 'queued' | 'checking' | 'passed' | 'flagged' | 'error'; summary?: string; claims?: Claim[]; web?: { title: string; uri: string }[]; flagged?: string[] }
 export type Project = {
-  qa?: QaReport | null
+  qa?: QaReport | null; factcheck?: FactCheck | null
   cost?: Cost; instructions?: string; quality?: 'draft' | 'final'; look?: string
   pace?: number
   id: string; title: string; topic: string; audience: string; language: string; aspect: '16:9' | '9:16'
@@ -92,6 +94,8 @@ export const api = {
   addScene: (id: string, after?: string) => send('POST', `/api/projects/${id}/scenes`, { after }),
   delScene: (id: string, sid: string) => send('DELETE', `/api/projects/${id}/scenes/${sid}`),
   reorder: (id: string, ids: string[]) => send('POST', `/api/projects/${id}/order`, { ids }),
+  runFactcheck: (id: string) => send('POST', `/api/projects/${id}/factcheck`),
+  applyCorrection: (id: string, i: number) => send('POST', `/api/projects/${id}/factcheck/${i}/apply`),
   runQa: (id: string) => send('POST', `/api/projects/${id}/qa`),
   fixScene: (id: string, sid: string) => send('POST', `/api/projects/${id}/scenes/${sid}/fix`),
   renderScene: (id: string, sid: string, opts: { force?: boolean; replan?: boolean } = {}) => send('POST', `/api/projects/${id}/scenes/${sid}/render`, opts),

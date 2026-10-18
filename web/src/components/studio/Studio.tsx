@@ -29,6 +29,7 @@ export function Studio({ id }: { id: string }) {
 
   const busy = !!p && (PROJECT_BUSY.includes(p.render_status) || p.scenes.some((s) => SCENE_BUSY.includes(s.status))
     || p.qa?.status === "queued" || p.qa?.status === "checking"
+    || p.factcheck?.status === "queued" || p.factcheck?.status === "checking"
     || (p.cast ?? []).some((c) => c.status === "generating" || c.status === "pending"));
   useEffect(() => {
     if (!busy) return;
@@ -193,6 +194,7 @@ function Board({ p, sel, setSel, setP, engines }: {
         <SceneRow key={s.id} s={s} i={i} aspect={p.aspect} on={sel === s.id} label={engines[s.engine]?.label}
           cast={(p.cast ?? []).filter((c) => c.kind !== "style" && s.cast?.includes(c.id))}
           flagged={!!p.qa?.flagged?.includes(s.id) && !p.qa?.stale}
+          factFlag={!!p.factcheck?.flagged?.includes(s.id)}
           onClick={() => setSel(sel === s.id ? null : s.id)}
           onRender={() => api.renderScene(p.id, s.id).then(setP)}
           drag={{ draggable: true, onDragStart: () => setDragId(s.id), onDragOver: (e) => e.preventDefault(), onDrop: () => drop(s.id) }} />

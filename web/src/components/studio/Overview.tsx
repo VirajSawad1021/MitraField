@@ -8,6 +8,7 @@ import { engineStyle } from "@/lib/engines";
 import { LookPicker } from "@/components/LookPicker";
 import { CostCard } from "./CostCard";
 import { QaCard } from "./QaCard";
+import { FactCheckCard } from "./FactCheckCard";
 
 export function Overview({ p, meta, setP, onWatch, select }: { p: Project; meta: Meta; setP: (p: Project) => void; onWatch: () => void; select: (sid: string) => void }) {
   const [note, setNote] = useState("");
@@ -39,6 +40,7 @@ export function Overview({ p, meta, setP, onWatch, select }: { p: Project; meta:
       )}
 
       <QaCard p={p} setP={setP} select={select} />
+      <FactCheckCard p={p} setP={setP} select={select} />
 
       {meta.looks && (
         <Card className="p-4">
