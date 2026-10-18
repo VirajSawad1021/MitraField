@@ -197,6 +197,12 @@ def create(body: NewProject):
     return media_url(p)
 
 
+@api.get("/api/projects/{pid}/costs")
+def project_costs(pid: str):
+    get(pid)
+    return costs.breakdown(pid)
+
+
 @api.get("/api/projects/{pid}")
 def read(pid: str):
     p = get(pid)

@@ -129,6 +129,16 @@ class FileBackend:
                 s["by_kind"][row["kind"]] = s["by_kind"].get(row["kind"], 0) + row["usd"]
             (config.DATA / ".spend.json").write_text(json.dumps(spend))
 
+    def cost_rows(self, pid):
+        f = config.DATA / pid / "costs.jsonl"
+        rows = []
+        for line in f.read_text().splitlines() if f.exists() else []:
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                pass
+        return rows
+
     def _spend(self):
         f = config.DATA / ".spend.json"
         return json.loads(f.read_text()) if f.exists() else self._rebuild_spend()
@@ -247,6 +257,9 @@ class FirestoreBackend:
             self.db.collection("spend").document(key).set(
                 {"total": inc(row["usd"]), "calls": inc(1), "by_kind": {row["kind"]: inc(row["usd"])}}, merge=True)
 
+    def cost_rows(self, pid):
+        return [c.to_dict() for c in self.col.document(pid).collection("costs").stream()]
+
     def spend(self, key):
         snap = self.db.collection("spend").document(key).get()
         return snap.to_dict() if snap.exists else {"total": 0.0, "calls": 0, "by_kind": {}}
@@ -354,6 +367,10 @@ def voice_delete(vid):
 # cost ledger / spend counters (used by costs.py)
 def add_cost(pid, row):
     backend().add_cost(pid, row)
+
+
+def cost_rows(pid):
+    return backend().cost_rows(pid)
 
 
 def spend(key):

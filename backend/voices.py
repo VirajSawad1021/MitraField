@@ -153,5 +153,7 @@ def ready(vid) -> VoiceProfile | None:
 
 
 def synth(text: str, v: VoiceProfile, out: Path):
+    t0 = time.time()
     out.write_bytes(_post("/tts/synthesize", 300, data={"text": text},
                           files={"prompt": ("prompt.pt", (config.DATA / "voices" / v.id / "prompt.pt").read_bytes(), "application/octet-stream")}))
+    costs.add("voice", (time.time() - t0) * costs.GPU_PER_SECOND, "omnivoice (Cloud Run L4 GPU)", f"{len(text)} chars")

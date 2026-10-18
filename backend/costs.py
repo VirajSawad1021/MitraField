@@ -21,6 +21,9 @@ VEO_PER_SECOND = {"veo-3.1-generate-preview": 0.40, "veo-3.1-fast-generate-previ
                   "veo-3.1-generate-001": 0.40, "veo-3.1-fast-generate-001": 0.10, "veo-3.1-lite-generate-001": 0.05}   # Vertex ids                    # 720p
 TTS_PER_SECOND = 0.000225          # gemini-3.8-flash-tts audio output
 MUSIC_PER_CLIP = 0.04              # Lyria 3 clip
+# OmniVoice on a Cloud Run L4 (no zonal redundancy, 4 vCPU, 16 GiB, instance-based billing), about $1.05 an hour.
+# Only the seconds a request occupied the GPU are charged to its video; idle time and cold starts are not.
+GPU_PER_SECOND = 1.05 / 3600
 
 _project = contextvars.ContextVar("cost_project", default=None)
 
@@ -103,3 +106,17 @@ def summary(pid):
     by = r.get("by_kind") or {}
     return {"total": round(r.get("total", 0.0), 4), "by_kind": {k: round(v, 4) for k, v in sorted(by.items(), key=lambda x: -x[1])},
             "calls": int(r.get("calls", 0))}
+
+
+def breakdown(pid):
+    """The ledger for one project, grouped by what was bought: one line per (kind, model)."""
+    lines = {}
+    for r in store.cost_rows(pid):
+        k = (r.get("kind", ""), r.get("model", ""))
+        line = lines.setdefault(k, {"kind": k[0], "model": k[1], "calls": 0, "usd": 0.0})
+        line["calls"] += 1
+        line["usd"] += r.get("usd", 0.0)
+    out = sorted(lines.values(), key=lambda x: -x["usd"])
+    for line in out:
+        line["usd"] = round(line["usd"], 4)
+    return {**summary(pid), "lines": out}

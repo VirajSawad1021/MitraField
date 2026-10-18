@@ -78,3 +78,15 @@ def test_rate_limit_gives_up_eventually(monkeypatch):
     monkeypatch.setattr(gemini.time, "sleep", lambda s: None)
     with pytest.raises(RuntimeError, match="429"):
         gemini._retry(lambda: (_ for _ in ()).throw(RuntimeError("429 RESOURCE_EXHAUSTED")))
+
+
+def test_breakdown_groups_by_kind_and_model(project):
+    with costs.track(project.id):
+        costs.add("image", 0.067, "m-img")
+        costs.add("image", 0.067, "m-img")
+        costs.add("voice", 0.01, "gemini-tts")
+        costs.add("voice", 0.02, "omnivoice")
+    b = costs.breakdown(project.id)
+    assert b["total"] == pytest.approx(0.164) and b["calls"] == 4
+    assert [(x["kind"], x["model"], x["calls"]) for x in b["lines"]] == [
+        ("image", "m-img", 2), ("voice", "omnivoice", 1), ("voice", "gemini-tts", 1)]

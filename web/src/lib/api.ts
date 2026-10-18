@@ -10,6 +10,7 @@ export type Scene = {
 }
 export type Source = { id: string; kind: 'note' | 'file' | 'link'; name: string; text: string }
 export type Cost = { total: number; by_kind: Record<string, number>; calls: number }
+export type CostLine = { kind: string; model: string; calls: number; usd: number }
 export type Project = {
   cost?: Cost; quality?: 'draft' | 'final'; look?: string
   pace?: number
@@ -63,6 +64,7 @@ export const api = {
   meta: () => j<Meta>(fetch('/api/meta')),
   list: () => j<ProjectRow[]>(fetch('/api/projects')),
   get: (id: string) => j<Project>(fetch(`/api/projects/${id}`)),
+  costs: (id: string) => j<Cost & { lines: CostLine[] }>(fetch(`/api/projects/${id}/costs`)),
   create: (b: Partial<Project> & { notes?: string }) => send('POST', '/api/projects', b),
   patch: (id: string, b: Partial<Project>) => send('PATCH', `/api/projects/${id}`, b),
   remove: (id: string) => fetch(`/api/projects/${id}`, { method: 'DELETE', headers: authHeaders() }),
