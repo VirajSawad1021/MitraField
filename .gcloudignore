@@ -1,18 +1,18 @@
-# Source upload for Cloud Build: only what the Dockerfile copies (keeps the upload small and secrets out)
-*
-!Dockerfile
-!requirements.txt
-!cli.py
-!backend/**
-!assets/**
-!deploy/fetch_fonts.sh
-!web/package.json
-!web/package-lock.json
-!web/src/**
-!web/public/**
-!web/*.ts
-!web/*.mjs
-!web/*.json
+# Source upload for Cloud Build. Keep it small and keep secrets and local state out.
+.git
+.github
+.venv
+.env
+.env.*
+data
+scratch
+tests
+docs
+*.log
+*.mp4
 web/node_modules
 web/.next
 web/out
+**/__pycache__
+.pytest_cache
+.ruff_cache
