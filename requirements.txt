@@ -10,6 +10,6 @@ numpy==2.5.4
 opencv-python-headless==5.0.0.93
 pillow==12.3.0
 requests==2.34.2
-pycairo==1.29.1
+pycairo==1.29.2
 manim==0.21.0
 playwright==1.62.0
