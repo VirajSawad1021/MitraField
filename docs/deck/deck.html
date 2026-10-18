@@ -189,44 +189,57 @@
 <!-- 7. architecture -->
 <section class="slide">
   <p class="eyebrow">Architecture on Google Cloud</p>
-  <h2 style="margin-top:20px;font-size:60px">One Cloud Run service, Google models end to end.</h2>
-  <div style="margin-top:56px;display:grid;grid-template-columns:1fr 60px 1.5fr 60px 1.2fr;align-items:center;gap:0">
-    <div style="display:flex;flex-direction:column;gap:18px">
-      <div class="box"><h4>Workspace</h4><p>Next.js app: new video, studio, cast strip, inspector, projects, demo</p></div>
-      <div class="box"><h4>Your sources</h4><p>Notes, PDFs and images read by Gemini as the source of truth</p></div>
+  <h2 style="margin-top:20px;font-size:58px">Stateless API, durable jobs, a GPU voice that scales to zero.</h2>
+  <div style="margin-top:46px;display:grid;grid-template-columns:1fr 50px 1.25fr 50px 1.15fr;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="box"><h4>Firebase Hosting</h4><p>CDN for the Next.js workspace, security headers, routes /api to Cloud Run</p></div>
+      <div class="box"><h4>Cloud Run: API</h4><p>Public, stateless, scales to zero. Passcode, spend caps ($25/day, $5/video), enqueues jobs, never renders</p></div>
     </div>
     <div class="arrow" style="text-align:center">→</div>
-    <div class="box" style="padding:30px;border-color:var(--ink)">
-      <h4 style="font-size:28px">Cloud Run · FastAPI</h4>
-      <p style="font-size:19px;margin-top:10px">Director agent · per-beat pipeline (narrate → plan → render → fit) · content-hash cache · cost ledger · passcode for writes</p>
-      <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="box" style="padding:14px 18px"><h4 style="font-size:19px">Code engines</h4><p style="font-size:16px">Manim + LaTeX, pycairo globe, charts, timeline, flow</p></div>
-        <div class="box" style="padding:14px 18px"><h4 style="font-size:19px">Assembly</h4><p style="font-size:16px">ffmpeg: fit, crossfade, mix, loudnorm, .srt</p></div>
-      </div>
-      <p style="font-size:17px;margin-top:16px">Cloud Storage mount for projects and media · Secret Manager for keys</p>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="box" style="border-color:var(--ink)"><h4>Cloud Tasks</h4><p>Durable queue: retries, backoff, rate limit; jobs survive deploys and restarts</p></div>
+      <div class="box" style="border-color:var(--ink)"><h4>Cloud Run: worker (private)</h4><p>One job per instance, up to 6 in parallel. Directs, narrates, renders one beat each, assembles, runs QA and fact checks. Model-written code runs in a sandbox</p></div>
+      <div class="box"><h4>Firestore · Cloud Storage · Secret Manager</h4><p>Project state with transactions (assembly runs exactly once) · media bucket · API keys</p></div>
     </div>
     <div class="arrow" style="text-align:center">→</div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="box" style="padding:16px 22px"><h4 style="font-size:21px">Gemini 3.1 Pro</h4><p style="font-size:16px">storyboard, routing, cast, rewrites, translation</p></div>
-      <div class="box" style="padding:16px 22px"><h4 style="font-size:21px">Gemini Flash</h4><p style="font-size:16px">engine planning, Manim code, vision QA, transcripts</p></div>
-      <div class="box" style="padding:16px 22px"><h4 style="font-size:21px">Nano Banana</h4><p style="font-size:16px">stills, characters, line art, cast references</p></div>
-      <div class="box" style="padding:16px 22px"><h4 style="font-size:21px">Veo 3.1</h4><p style="font-size:16px">hero shots, image-to-video from cast frames</p></div>
-      <div class="box" style="padding:16px 22px"><h4 style="font-size:21px">Gemini TTS · Lyria</h4><p style="font-size:16px">narration · topic-matched music bed</p></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Gemini 3.1 Pro + Flash</h4><p style="font-size:15px">director, code, vision QA, fact check with Google Search</p></div>
+      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Nano Banana · Veo 3.1</h4><p style="font-size:15px">stills, cast references, hero video</p></div>
+      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Gemini TTS · Lyria</h4><p style="font-size:15px">narration fallback, music bed</p></div>
+      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Cloud Run GPU (L4)</h4><p style="font-size:15px">OmniVoice cloned narrators, scales to zero</p></div>
     </div>
   </div>
-  <div class="foot"><span>MitraField</span><span>7</span></div>
+  <p style="margin-top:34px;font-size:21px">Every push to main runs lint, 104 tests (including the Firestore emulator), the web build and the image build, then a gated canary deploy.</p>
+  <div class="foot"><span>MitraField · live at mitrafield-aibc26.web.app</span><span>7</span></div>
+</section>
+
+<!-- 7b. trust -->
+<section class="slide">
+  <p class="eyebrow">Trust and safety</p>
+  <h2 style="margin-top:20px">Every video checks itself <span class="soft">before you see it.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:24px;margin-top:52px">
+    <div class="card" style="padding:34px"><h3 style="font-size:26px">Quality check</h3><p style="margin-top:12px;font-size:20px">After every render: ffmpeg checks length, black or frozen frames, silence and loudness, a contact sheet is saved, and Gemini reviews every beat for cut-off text, garbled words in images and off-model characters. One click fixes a flagged beat.</p></div>
+    <div class="card" style="padding:34px"><h3 style="font-size:26px">Fact-check agent</h3><p style="margin-top:12px;font-size:20px">Every number and claim, in the narration and on screen, is checked against the user's sources first, then Google Search, with citations. Contradicted claims are flagged with a correction the director can apply.</p></div>
+    <div class="card" style="padding:34px"><h3 style="font-size:26px">No deepfakes</h3><p style="margin-top:12px;font-size:20px">Requests to put words in a real person's mouth are refused. Every image and video prompt is screened: real people become anonymous stand-ins, and video of a real person is never generated.</p></div>
+    <div class="card" style="padding:34px"><h3 style="font-size:26px">Prompt-injection guard</h3><p style="margin-top:12px;font-size:20px">Uploaded PDFs and notes are fenced off as data. A test note that said "ignore all previous instructions" and tried to turn the video into a crypto ad was ignored, while its real facts were used.</p></div>
+    <div class="card" style="padding:34px"><h3 style="font-size:26px">Spend control</h3><p style="margin-top:12px;font-size:20px">Every model call is priced and logged per video. Hard caps of $25 a day and $5 a video, a passcode on anything that spends, and a cheaper draft mode.</p></div>
+    <div class="card" style="padding:34px"><h3 style="font-size:26px">Sandboxed code</h3><p style="margin-top:12px;font-size:20px">Manim code written by the model runs in a sandbox without network access, and motion scenes render offline in headless Chrome.</p></div>
+  </div>
+  <div class="foot"><span>MitraField</span><span>7b</span></div>
 </section>
 
 <!-- 8. agentic depth -->
 <section class="slide">
   <p class="eyebrow">Gen AI implementation</p>
-  <h2 style="margin-top:20px">Not one prompt. <span class="soft">Five loops that check each other.</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:22px;margin-top:64px">
+  <h2 style="margin-top:20px">Not one prompt. <span class="soft">Seven loops that check each other.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:20px;margin-top:52px">
     <div class="card" style="padding:32px"><div class="num">01</div><h3 style="margin-top:18px;font-size:26px">Route</h3><p style="font-size:20px;margin-top:10px">The director reads every engine's description and picks per beat, under rules: facts go to exact engines, Veo is capped at two.</p></div>
     <div class="card" style="padding:32px"><div class="num">02</div><h3 style="margin-top:18px;font-size:26px">Code + repair</h3><p style="font-size:20px;margin-top:10px">Gemini writes Manim for the exact duration. Render errors go back with the traceback until it compiles.</p></div>
     <div class="card" style="padding:32px"><div class="num">03</div><h3 style="margin-top:18px;font-size:26px">Look + fix</h3><p style="font-size:20px;margin-top:10px">Gemini vision inspects rendered frames for overlapping or cut-off text and asks for a corrected scene.</p></div>
     <div class="card" style="padding:32px"><div class="num">04</div><h3 style="margin-top:18px;font-size:26px">Listen + retake</h3><p style="font-size:20px;margin-top:10px">Every narration line is transcribed and retaken if words were added, dropped or garbled.</p></div>
     <div class="card" style="padding:32px"><div class="num">05</div><h3 style="margin-top:18px;font-size:26px">Stay on model</h3><p style="font-size:20px;margin-top:10px">Cast references feed every image and Veo first frame, so characters and subjects stay consistent.</p></div>
+    <div class="card" style="padding:32px"><div class="num">06</div><h3 style="margin-top:18px;font-size:26px">Review the cut</h3><p style="font-size:20px;margin-top:10px">After assembly Gemini reviews every beat of the finished video and ffmpeg checks picture and sound; a flagged beat is fixed in one click.</p></div>
+    <div class="card" style="padding:32px"><div class="num">07</div><h3 style="margin-top:18px;font-size:26px">Check the facts</h3><p style="font-size:20px;margin-top:10px">Claims are verified against the sources and Google Search; contradicted ones come back to the director with the evidence.</p></div>
   </div>
   <p style="margin-top:56px;font-size:24px">Failures degrade gracefully: a refused Veo clip becomes a still, a failed engine becomes a title card, and the video still renders.</p>
   <div class="foot"><span>MitraField</span><span>8</span></div>
@@ -238,7 +251,7 @@
   <h2 style="margin-top:20px">Finished explainers from a single prompt.</h2>
   <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:56px;gap:24px">
     <div class="card" style="padding:36px"><div class="big">10</div><p style="margin-top:14px;font-size:21px">finished videos: geography, math, biology, history, tech, anatomy and earth science, in 3 looks and 3 languages</p></div>
-    <div class="card" style="padding:36px"><div class="big">2-9<span style="font-size:40px"> min</span></div><p style="margin-top:14px;font-size:21px">to render a 45-60 s video on one small server, unattended</p></div>
+    <div class="card" style="padding:36px"><div class="big">2-9<span style="font-size:40px"> min</span></div><p style="margin-top:14px;font-size:21px">to render a 45-60 s video, unattended, no manual edits</p></div>
     <div class="card" style="padding:36px"><div class="big" style="font-size:72px">$0.72-1.70</div><p style="margin-top:14px;font-size:21px">measured API cost per video, logged per call; a translation that reuses the shots cost $0.34</p></div>
     <div class="card" style="padding:36px"><div class="big">56%</div><p style="margin-top:14px;font-size:21px">of all beats rendered by exact engines, so facts are computed, not generated</p></div>
   </div>
@@ -270,8 +283,8 @@
   <div class="card" style="margin-top:56px;overflow:hidden">
     <table>
       <tr><th style="width:360px">Area</th><th>Today</th><th>Next</th></tr>
-      <tr><td><b>Compute</b></td><td>One Cloud Run service, renders as in-process jobs, content-hash cache</td><td>Renders as Cloud Run jobs, one per beat, scale to zero</td></tr>
-      <tr><td><b>Cost control</b></td><td>Per-project ledger, Veo length fitted to the beat, draft mode on Veo Lite</td><td>Batch API for final renders, per-user budgets</td></tr>
+      <tr><td><b>Compute</b></td><td>API and worker on Cloud Run, Cloud Tasks queue, one beat per worker instance, Firestore state, content-hash cache</td><td>Autoscaled worker pools per tenant, render priority lanes</td></tr>
+      <tr><td><b>Cost control</b></td><td>Per-call ledger, $25/day and $5/video caps, Veo length fitted to the beat, draft mode on Veo Lite</td><td>Batch API for final renders, per-user budgets</td></tr>
       <tr><td><b>Styles</b></td><td>Ten engines behind one contract, discovered automatically</td><td>Scale comparisons, source-quote cards, code walkthroughs, real archival footage</td></tr>
       <tr><td><b>Learning</b></td><td>Audience and level steer the script</td><td>Learn mode: quizzes after the video, beats re-explained where viewers struggle, analytics in BigQuery</td></tr>
       <tr><td><b>Languages</b></td><td>One-click translation that reuses the visuals</td><td>Cloud Translation glossaries, regional voices</td></tr>
@@ -287,11 +300,11 @@
     <div>
       <div class="logo"><span class="mark">m</span>mitrafield</div>
       <h2 style="margin-top:36px">What should we explain?</h2>
-      <p style="margin-top:16px;font-size:26px">Live demo, code and video links are in the submission form.</p>
+      <p style="margin-top:16px;font-size:26px">Live: <b>mitrafield-aibc26.web.app</b></p>
     </div>
     <div style="text-align:right;font-size:24px;line-height:1.7;color:var(--body)">
       <div>github.com/VirajSawad1021/MitraField</div>
-      <div>Viraj Sawad</div>
+      <div>Viraj Sawad · Gaurav Giri</div>
       <div>AI Builder Cup 2026</div>
     </div>
   </div>
