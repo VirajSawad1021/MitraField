@@ -5,7 +5,7 @@ content-hash cache and does nothing.
 import shutil
 from pathlib import Path
 
-from . import cast, config, costs, director, jobs, log, pipeline, store, voices
+from . import cast, config, costs, director, jobs, log, pipeline, qa, store, voices
 from .errors import friendly_error
 from .models import new_id
 
@@ -60,6 +60,11 @@ def render_scene(pid, sid, force=False, then_assemble=False):
 @jobs.task("assemble")
 def assemble(pid):
     pipeline.assemble(pid)
+
+
+@jobs.task("qa")
+def quality_check(pid):
+    qa.run(pid)
 
 
 @jobs.task("rewrite")

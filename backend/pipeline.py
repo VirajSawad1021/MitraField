@@ -3,6 +3,7 @@ scene only re-does that scene."""
 import hashlib
 import json
 import re
+import time
 import shutil
 from pathlib import Path
 
@@ -249,7 +250,9 @@ def assemble(pid):
 
         def done(pp):
             pp.render_status, pp.render_path, pp.render_error = "done", str(final), None
+            pp.qa = {"status": "queued", "t": time.time()}
         store.mutate(pid, done)
+        jobs.enqueue("qa", pid=pid)   # every finished video gets a quality check
         return final
     except Exception as e:
         logger.exception("assemble failed", extra={"pid": pid})
