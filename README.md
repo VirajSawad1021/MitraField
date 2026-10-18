@@ -76,7 +76,7 @@ appears in the opening still and both Veo shots. Cast items are editable in the 
 | Hero video, image-to-video | Veo 3.1 (Fast; Lite in draft mode) |
 | Narration | Gemini TTS |
 | Music bed | Lyria |
-| Models, in production | Vertex AI, as the worker's own service account (no API key in the container) |
+| Models, in production | Gemini API, key in Secret Manager (worker only); `STUDIO_VERTEX=1` for Vertex AI with the service identity |
 | Hosting | Cloud Run (public API service + private worker service), Cloud Tasks (durable render jobs), Firestore (project state), Cloud Storage (media), Firebase Hosting (static UI on a CDN), Secret Manager, Cloud Build, Artifact Registry |
 
 Every billable call is priced from Google's published rates and logged per project; the studio shows the

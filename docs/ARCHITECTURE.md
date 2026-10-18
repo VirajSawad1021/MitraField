@@ -22,8 +22,8 @@ built to run on Google Cloud, why each piece was chosen, and where its limits ar
                ▼                                                 │
 ┌───────────────────────── Cloud Run: mitrafield-worker (private) ─────────────────────────────────┐
 │  Same image, STUDIO_ROLE=worker. One job per instance (concurrency 1), up to 6 instances.         │
-│  Directs, narrates, renders one beat, assembles. Calls Vertex AI as its own service account.      │
-│  Runs model-written code in a sandbox (see Security).      SA: worker (Vertex AI, Firestore)      │
+│  Directs, narrates, renders one beat, assembles. Calls the Gemini API (key from Secret Manager).      │
+│  Runs model-written code in a sandbox (see Security).      SA: worker (Firestore, key)        │
 └───────────────┬──────────────────────────────────────────────────────────────────────────────────┘
                 │ media (clips, audio, stills, final mp4)
                 ▼
@@ -42,7 +42,7 @@ process cannot execute a render even if asked, and the worker is not reachable f
 | Fan-out per beat, fan-in by transaction | One long job per video | Beats render in parallel across instances. No job waits on another. The last beat to finish claims assembly with a Firestore transaction, so assembly runs exactly once even when Cloud Tasks redelivers. |
 | Firestore for project state | JSON files on a Cloud Storage mount | A FUSE mount has no cross-instance locking. Firestore transactions make concurrent workers safe and list queries fast. |
 | Project stored as one JSON string per document | Native map with sub-collections | Engine parameters contain nested arrays (coordinates, series), which Firestore rejects. A project is tens of KB, far below the 1 MiB limit. |
-| Vertex AI with the service account | Gemini API key in Secret Manager | No credential in the container. IAM-scoped, audited, regional. The key remains a local-development option only. |
+| Gemini API key in Secret Manager (worker only) | Vertex AI with the service account | The Gemini API had the headroom: Vertex image quota on a new project returned 429s. The key is injected by Cloud Run, never baked into the image, and the API service cannot read it. `STUDIO_VERTEX=1` switches to Vertex with no key. |
 | Cloud Storage mount for media | Signed URLs and the client library | Engines write files with ffmpeg, Manim and Chromium; a path is the interface they need. |
 | Firebase Hosting in front | API serving the UI | CDN caching for the static app, security headers, a stable `web.app` domain. The API can still serve the UI on its own. |
 
@@ -89,9 +89,9 @@ process cannot execute a render even if asked, and the worker is not reachable f
   leave the data directory. Uploaded sources and state files are never served.
 * **Worker is private.** Only the Cloud Tasks service account (and the deploy gate) hold `run.invoker`. The OIDC
   token is verified again in the app, so the endpoint stays safe if the service is ever exposed by mistake.
-* **Least privilege, one service account per role.** API: Firestore, enqueue, bucket. Worker: Vertex AI, Firestore,
+* **Least privilege, one service account per role.** API: Firestore, enqueue, bucket. Worker: Gemini key, Firestore,
   bucket. Tasks: may only invoke the worker. Deploy: build and release, no access to data or models.
-* **No keys anywhere.** Vertex AI and Firestore use the runtime identity. GitHub Actions deploys through Workload
+* **One key, one reader.** The Gemini API key lives in Secret Manager and only the worker can read it; Firestore uses the runtime identity. GitHub Actions deploys through Workload
   Identity Federation, bound to this repository; nothing is stored in GitHub. The passcode is in Secret Manager.
 * **Model-written code is untrusted.** The Manim engine runs Python that Gemini wrote, steered by uploaded files.
   It gets: a static allow-list (imports, builtins, attributes, file-reading mobjects); a clean environment with no

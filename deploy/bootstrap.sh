@@ -104,6 +104,13 @@ gcloud secrets versions list studio-passcode --limit=1 --format='value(name)' | 
   || { echo "No passcode stored. Re-run with STUDIO_PASSCODE=... (the public link needs it)."; exit 1; }
 gcloud secrets add-iam-policy-binding studio-passcode --member="serviceAccount:$API_SA" --role=roles/secretmanager.secretAccessor >/dev/null
 
+echo "== Gemini API key secret (worker only)"
+gcloud secrets describe gemini-api-key >/dev/null 2>&1 || gcloud secrets create gemini-api-key --replication-policy=automatic
+if [ -n "${GEMINI_API_KEY:-}" ]; then printf '%s' "$GEMINI_API_KEY" | gcloud secrets versions add gemini-api-key --data-file=- >/dev/null; fi
+gcloud secrets versions list gemini-api-key --limit=1 --format='value(name)' | grep -q . \
+  || echo "No Gemini API key stored; re-run with GEMINI_API_KEY=... (not needed with STUDIO_VERTEX=1)."
+gcloud secrets add-iam-policy-binding gemini-api-key --member="serviceAccount:$WORKER_SA" --role=roles/secretmanager.secretAccessor >/dev/null
+
 echo "== Workload Identity Federation for $GITHUB_REPO"
 gcloud iam workload-identity-pools describe github --location=global >/dev/null 2>&1 \
   || gcloud iam workload-identity-pools create github --location=global --display-name="GitHub Actions"

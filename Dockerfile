@@ -33,8 +33,8 @@ COPY --from=web /web/out web/out
 RUN useradd --uid 10001 --create-home app && chown -R app /app
 USER app
 
-# Vertex AI authenticates as the service account, so the image holds no API key. Projects live in
-# Firestore; media on a Cloud Storage mount; jobs go through Cloud Tasks.
+# The image holds no API key: Cloud Run injects it from Secret Manager (or Vertex AI uses the service
+# account, STUDIO_VERTEX=1). Projects live in Firestore; media on a Cloud Storage mount; jobs go through Cloud Tasks.
 ENV STUDIO_MANIM_PY=python STUDIO_OMNI_URL="" STUDIO_DATA=/data/projects PORT=8080 \
-    STUDIO_VERTEX=1 STUDIO_STORE=firestore STUDIO_QUEUE=cloudtasks
+    STUDIO_STORE=firestore STUDIO_QUEUE=cloudtasks
 CMD ["sh", "-c", "exec uvicorn backend.app:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips='*'"]

@@ -21,10 +21,18 @@ PROJECT_NUMBER="$(gcloud projects describe "$PROJECT" --format='value(projectNum
 # Cloud Run URLs are deterministic, which breaks the api<->worker chicken-and-egg without a second deploy.
 WORKER_URL="https://mitrafield-worker-${PROJECT_NUMBER}.${REGION}.run.app"
 API_URL="https://mitrafield-api-${PROJECT_NUMBER}.${REGION}.run.app"
-# Vertex serves Gemini, Nano Banana, TTS and Lyria from `global` but Veo only from us-central1, under its GA ids
-# (checked against the Vertex model catalogue on 2026-10-18).
-VEO_FAST="${VEO_FAST:-veo-3.1-fast-generate-001}"; VEO_LITE="${VEO_LITE:-veo-3.1-lite-generate-001}"
-VERTEX_LOCATIONS="${VERTEX_LOCATIONS:-${VEO_FAST}=us-central1;${VEO_LITE}=us-central1}"
+# Model provider. Default: the Gemini API, with the key held in Secret Manager and readable by the worker only.
+# STUDIO_VERTEX=1 switches to Vertex AI as the worker's service account (no key), whose GA Veo ids exist only in
+# us-central1 (checked against the Vertex model catalogue on 2026-10-18).
+STUDIO_VERTEX="${STUDIO_VERTEX:-0}"
+if [ "$STUDIO_VERTEX" = 1 ]; then
+  VEO_FAST="${VEO_FAST:-veo-3.1-fast-generate-001}"; VEO_LITE="${VEO_LITE:-veo-3.1-lite-generate-001}"
+  PROVIDER_ENV=",STUDIO_VERTEX=1,STUDIO_MODEL_VEO=${VEO_FAST},STUDIO_MODEL_VEO_DRAFT=${VEO_LITE},STUDIO_VERTEX_LOCATIONS=${VERTEX_LOCATIONS:-${VEO_FAST}=us-central1;${VEO_LITE}=us-central1}"
+  PROVIDER_SECRETS=()
+else
+  PROVIDER_ENV=",STUDIO_VERTEX=0${VEO_FAST:+,STUDIO_MODEL_VEO=${VEO_FAST}}${VEO_LITE:+,STUDIO_MODEL_VEO_DRAFT=${VEO_LITE}}"
+  PROVIDER_SECRETS=(--set-secrets GEMINI_API_KEY=gemini-api-key:latest)
+fi
 VOLUME_OPTS="uid=10001,gid=10001,file-mode=666,dir-mode=777,implicit-dirs,metadata-cache-ttl-secs=30"
 cd "$(dirname "$0")/.."
 
@@ -64,14 +72,15 @@ echo "== worker (private, one render per instance)"
 deploy mitrafield-worker \
   --no-allow-unauthenticated --service-account "$WORKER_SA" \
   --cpu 4 --memory 8Gi --concurrency 1 --timeout 1800 --min-instances 0 --max-instances 6 \
-  --set-env-vars "STUDIO_ROLE=worker,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CALLERS=${DEPLOY_SA},STUDIO_CAP_DAY_USD=${CAP_DAY_USD:-25},STUDIO_CAP_PROJECT_USD=${CAP_PROJECT_USD:-5}${VEO_FAST:+,STUDIO_MODEL_VEO=${VEO_FAST}}${VEO_LITE:+,STUDIO_MODEL_VEO_DRAFT=${VEO_LITE}},STUDIO_VERTEX_LOCATIONS=${VERTEX_LOCATIONS}"
+  --set-env-vars "STUDIO_ROLE=worker,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CALLERS=${DEPLOY_SA},STUDIO_CAP_DAY_USD=${CAP_DAY_USD:-25},STUDIO_CAP_PROJECT_USD=${CAP_PROJECT_USD:-5}${PROVIDER_ENV}" \
+  ${PROVIDER_SECRETS[@]+"${PROVIDER_SECRETS[@]}"}
 # Cloud Tasks (as the tasks SA) and the deploy gate may invoke the worker; nobody else.
 for sa in "$TASKS_SA" "$DEPLOY_SA"; do
   gcloud run services add-iam-policy-binding mitrafield-worker --project "$PROJECT" --region "$REGION" \
     --member="serviceAccount:$sa" --role=roles/run.invoker >/dev/null
 done
 
-echo "== gate: worker selftest (Firestore round trip + a real Vertex AI call as the worker identity)"
+echo "== gate: worker selftest (Firestore round trip + a real model call from the worker)"
 # Always act as the deploy service account (a user account cannot mint a token for a custom audience, and the
 # worker checks the caller's email, which only --include-email puts in the token).
 TOKEN="$(gcloud auth print-identity-token --impersonate-service-account="$DEPLOY_SA" --audiences="$WORKER_URL" --include-email)"
