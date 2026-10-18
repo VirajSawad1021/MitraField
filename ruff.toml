@@ -1,0 +1,7 @@
+line-length = 140
+target-version = "py312"
+extend-exclude = ["web", "docs", "scratch", "data"]
+
+[lint]
+select = ["E", "F", "W", "B", "UP", "I"]
+ignore = ["E501", "B008", "B904", "B905", "B023", "E402", "E701", "E702", "E731", "E741", "I001"]
