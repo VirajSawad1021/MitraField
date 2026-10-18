@@ -67,6 +67,24 @@ def text(prompt, model=None, system=None, parts=None, temperature=None):
     return r.text or ""
 
 
+def grounded(prompt, model=None, system=None, parts=None):
+    """Text answer with Google Search grounding. Returns (text, [{title, uri}]) of the web sources used."""
+    contents = [prompt] + list(parts or [])
+    cfg = types.GenerateContentConfig(system_instruction=system, tools=[types.Tool(google_search=types.GoogleSearch())])
+    m = model or config.MODEL_FAST
+    r = _retry(lambda: client(m).models.generate_content(model=m, contents=contents, config=cfg))
+    costs.tokens(m, r.usage_metadata)
+    web = []
+    try:
+        meta = r.candidates[0].grounding_metadata
+        for ch in (meta.grounding_chunks or []) if meta else []:
+            if ch.web and ch.web.uri:
+                web.append({"title": ch.web.title or ch.web.uri, "uri": ch.web.uri})
+    except (AttributeError, IndexError):
+        pass
+    return r.text or "", web
+
+
 def json_call(prompt, schema=None, model=None, system=None, parts=None, temperature=None):
     """Structured output. `schema` is a pydantic model or JSON schema dict."""
     contents = [prompt] + list(parts or [])
@@ -79,7 +97,10 @@ def json_call(prompt, schema=None, model=None, system=None, parts=None, temperat
 
 
 def image(prompt, out, aspect="16:9", refs=(), model=None):
-    """Nano Banana. `refs` are image paths, or (label, path) pairs, used for consistency."""
+    """Nano Banana. `refs` are image paths, or (label, path) pairs, used for consistency.
+    Real, identifiable people in the prompt are turned into anonymous stand-ins (guards.py)."""
+    from . import guards
+    prompt = guards.guard_image_prompt(prompt)
     parts = []
     for r in refs:
         label, path = r if isinstance(r, tuple) else (None, r)
@@ -133,7 +154,10 @@ def tts(text_in, out_wav, voice="Charon", model=None):
 
 
 def video(prompt, out, aspect="16:9", seconds=8, image_path=None, model=None):
-    """Veo. Blocks until the clip is ready (usually 1-3 min)."""
+    """Veo. Blocks until the clip is ready (usually 1-3 min). Never of a real, identifiable person:
+    guards.Refused is raised instead and the engine falls back to a guarded still."""
+    from . import guards
+    guards.guard_video_prompt(prompt)
     kw = {}
     if image_path:
         kw["image"] = types.Image(image_bytes=Path(image_path).read_bytes(), mime_type="image/png")

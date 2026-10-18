@@ -5,7 +5,7 @@ content-hash cache and does nothing.
 import shutil
 from pathlib import Path
 
-from . import cast, config, costs, director, jobs, log, pipeline, qa, store, voices
+from . import cast, config, costs, director, factcheck, guards, jobs, log, pipeline, qa, store, voices
 from .errors import friendly_error
 from .models import new_id
 
@@ -20,7 +20,9 @@ TEXT_ENGINES = {"title", "manim", "globe", "chart", "timeline", "flow", "scene"}
 def storyboard(pid):
     store.mutate(pid, lambda p: setattr(p, "render_status", "directing"))
     try:
-        p = director.storyboard(store.load(pid))
+        src = store.load(pid)
+        guards.screen_request(src.topic, src.instructions)   # no fabricated words or deeds of real people
+        p = director.storyboard(src)
         p.render_status = "storyboard"
         store.save(p)
     except Exception as e:
@@ -28,6 +30,7 @@ def storyboard(pid):
         store.mutate(pid, lambda p: (setattr(p, "render_status", "error"), setattr(p, "render_error", msg)))
         raise
     jobs.enqueue("cast_ensure", pid=pid)   # reference images are ready before the first render
+    jobs.enqueue("factcheck", pid=pid)     # claims are checked before anything is rendered
 
 
 @jobs.task("cast_ensure")
@@ -65,12 +68,23 @@ def assemble(pid):
 @jobs.task("qa")
 def quality_check(pid):
     qa.run(pid)
+    factcheck.run(pid)   # again with the rendered beats' on-screen numbers and labels
+
+
+@jobs.task("factcheck")
+def fact_check(pid):
+    factcheck.run(pid)
 
 
 @jobs.task("rewrite")
 @costs.tracked
 def rewrite(pid, sid, instruction):
     p = store.load(pid)
+    try:
+        guards.screen_request(p.topic, instruction)
+    except guards.Refused as e:
+        pipeline.set_scene(pid, sid, status="ready" if store.scene(p, sid).clip else "draft", error=str(e))
+        return
     s = director.rewrite_scene(p, store.scene(p, sid), instruction)
     s.status = "draft"
     store.mutate(pid, lambda pp: pp.scenes.__setitem__([x.id for x in pp.scenes].index(sid), s))
