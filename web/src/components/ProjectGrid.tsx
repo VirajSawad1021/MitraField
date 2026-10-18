@@ -25,8 +25,8 @@ export function ProjectGrid() {
   }
   if (rows.length === 0) {
     return (
-      <Empty icon={<Clapperboard className="h-5 w-5" />} title="No videos yet" body="Ask a question and the director will storyboard it for you."
-        action={<LinkButton href="/new">Start a video</LinkButton>} />
+      <Empty icon={<Clapperboard className="h-5 w-5" />} title="No videos yet" body="Ask a question. The director writes a storyboard you approve before anything renders."
+        action={<LinkButton href="/new">Create video</LinkButton>} />
     );
   }
   return (
@@ -45,7 +45,7 @@ export function ProjectGrid() {
             </div>
             <div className="p-5">
               <p className="line-clamp-1 text-[16px] font-semibold tracking-tight">{r.title}</p>
-              <p className="mt-1 text-[12px] text-muted">{r.aspect === "9:16" ? "Short" : "Landscape"} · {r.language || "English"} · {r.scenes} beats · {ago(r.updated)}</p>
+              <p className="mt-1 text-[12px] text-muted">{r.aspect === "9:16" ? "Short" : "Landscape"} · {r.language || "English"} · {r.scenes} scenes · {ago(r.updated)}</p>
               <div className="mt-3 flex gap-1">
                 {r.engines.map((e) => <EngineTile key={e} engine={e} />)}
               </div>

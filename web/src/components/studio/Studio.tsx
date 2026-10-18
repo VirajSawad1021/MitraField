@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Film, Languages, Play, Sparkles, Wand2 } from "lucide-react";
+import { Download, Film, Languages, Mic, Play, RefreshCw, Sparkles, Wand2 } from "lucide-react";
 import { AgentWorking, Badge, Button, ErrorNote, Segmented, Skeleton, fmtTime } from "@/components/ui";
 import { api, type Meta, type Project } from "@/lib/api";
-import { engineStyle } from "@/lib/engines";
 import { PROJECT_BUSY, SCENE_BUSY, statusTone } from "@/lib/status";
 import { VoiceSelect } from "@/components/VoiceSelect";
 import { CastStrip } from "./CastStrip";
@@ -45,7 +44,6 @@ export function Studio({ id }: { id: string }) {
 
   const run = (f: () => Promise<Project>) => f().then(setP).catch((e) => setErr(e instanceof Error ? e.message : String(e)));
 
-  const engines = useMemo(() => Object.fromEntries((meta?.engines ?? []).map((e) => [e.name, e])), [meta]);
 
   if (!p || !meta) {
     return (
@@ -59,38 +57,43 @@ export function Studio({ id }: { id: string }) {
   const scene = p.scenes.find((s) => s.id === sel) ?? null;
   const total = p.scenes.reduce((a, s) => a + (s.duration || 0), 0);
   const ready = p.scenes.filter((s) => s.status === "ready").length;
-  const exact = p.scenes.filter((s) => engineStyle(s.engine).kind === "exact").length;
   const working = PROJECT_BUSY.includes(p.render_status);
+  const stale = !!p.render_url && (!!p.outdated || p.scenes.some((s) => s.status !== "ready"));
   const [tone, label] = statusTone(p.render_status);
 
   return (
     <main className="mx-auto max-w-[1400px] px-5 pb-24 pt-8 sm:px-6">
       {/* header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <Link href="/projects" className="text-[12px] font-medium text-muted hover:text-ink">← Projects</Link>
-          <Title p={p} onSave={(title) => run(() => api.patch(p.id, { title }))} />
-          {p.topic.trim().toLowerCase() !== p.title.trim().toLowerCase() && <p className="mt-1 max-w-2xl truncate text-[13px] text-body">{p.topic}</p>}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 pt-5">
-          <Badge tone={tone}>{label === "Rendering" ? `Rendering ${ready}/${p.scenes.length}` : label}</Badge>
-          {p.scenes.length > 0 && <Badge>{p.scenes.length} beats{total ? ` · ${fmtTime(total)}` : ""}</Badge>}
-          {p.scenes.length > 0 && <Badge tone="good">{exact} exact</Badge>}
-          {!!p.cost?.total && <Badge tone="info" title={`${p.cost.calls} billable calls`}>${p.cost.total.toFixed(2)} spent</Badge>}
-          <Segmented size="sm" value={p.quality ?? "final"} onChange={(v) => run(() => api.patch(p.id, { quality: v }))}
-            options={[{ value: "draft", label: "Draft" }, { value: "final", label: "Final" }]} />
-          <VoiceSelect meta={meta} value={p.voice} onChange={(voice) => run(() => api.patch(p.id, { voice }))} title="Narrator voice"
-            className="h-10 rounded-full border border-line-strong bg-white px-3.5 text-[13px] font-medium focus:outline-none" />
+      <Link href="/projects" className="text-[12px] font-medium text-muted hover:text-ink">← Projects</Link>
+      <Title p={p} onSave={(title) => run(() => api.patch(p.id, { title }))} />
+      {p.topic.trim().toLowerCase() !== p.title.trim().toLowerCase() && <p className="mt-1 max-w-2xl truncate text-[13px] text-body">{p.topic}</p>}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Badge tone={tone}>{label === "Rendering" ? `Rendering ${ready}/${p.scenes.length}` : label}</Badge>
+        {p.scenes.length > 0 && <Badge>{p.scenes.length} scenes{total ? ` · ${fmtTime(total)}` : ""}</Badge>}
+        {stale && !working && <Badge tone="warn">Changed since the last export</Badge>}
+      </div>
+
+      {/* toolbar: settings on the left, the one next step on the right */}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-y border-line py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex h-10 items-center gap-1.5 rounded-full border border-line-strong bg-white pl-3.5 pr-1 text-[13px]" title="Who narrates this video">
+            <Mic className="h-4 w-4 text-body" /><span className="text-muted">Narrator</span>
+            <VoiceSelect meta={meta} value={p.voice} onChange={(voice) => run(() => api.patch(p.id, { voice }))}
+              className="h-9 max-w-[180px] bg-transparent pr-2 font-semibold focus:outline-none" />
+          </label>
+          <div className="flex items-center gap-1.5" title="Draft renders video clips with a cheaper model, for trying ideas">
+            <span className="text-[12px] text-muted">Quality</span>
+            <Segmented size="sm" value={p.quality ?? "final"} onChange={(v) => run(() => api.patch(p.id, { quality: v }))}
+              options={[{ value: "draft", label: "Draft" }, { value: "final", label: "Final" }]} />
+          </div>
           <TranslateMenu disabled={!p.scenes.length} exclude={p.language} onPick={async (l) => {
             await api.translate(p.id, l);
             setNote(`A ${l} version is being made. It reuses these visuals and appears in Projects when it is done.`);
           }} />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {p.render_url && !working && <Button variant="secondary" onClick={() => setWatch(true)}><Play className="h-4 w-4" />Watch</Button>}
-          {p.scenes.length === 0
-            ? <Button onClick={() => run(() => api.storyboard(p.id))} loading={working}><Wand2 className="h-4 w-4" />Direct storyboard</Button>
-            : <Button onClick={() => run(() => api.render(p.id))} loading={working}>
-                {working ? (p.render_status === "assembling" ? "Assembling" : p.render_status === "directing" ? "Directing" : "Rendering") : <><Film className="h-4 w-4" />{p.render_url ? "Re-render video" : "Render video"}</>}
-              </Button>}
+          <Primary p={p} working={working} stale={stale} ready={ready} run={run} />
         </div>
       </div>
 
@@ -103,26 +106,36 @@ export function Studio({ id }: { id: string }) {
         </div>
       )}
 
-      {/* routing bar */}
-      {p.scenes.length > 0 && <RouteBar p={p} sel={sel} setSel={setSel} />}
       {p.scenes.length > 0 && <CastStrip p={p} setP={setP} />}
 
       <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
         <section className="min-w-0">
+          {p.render_url && !scene && (
+            <button onClick={() => setWatch(true)} className="group relative mb-4 block w-full overflow-hidden rounded-2xl bg-ink lg:hidden">
+              {p.scenes[0]?.thumb_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.scenes[0].thumb_url} alt="" className="aspect-video w-full object-cover opacity-90" />
+              )}
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-ink shadow-lg"><Play className="ml-0.5 h-5 w-5" /></span>
+              </span>
+              <span className="absolute bottom-3 left-3 rounded-full bg-black/55 px-2.5 py-0.5 text-[11px] font-semibold text-white">Finished video</span>
+            </button>
+          )}
           {p.render_status === "directing" ? (
             <div className="space-y-3">
-              <AgentWorking agent="Director agent" task="Reading your sources, writing the story beat by beat and choosing an engine for each one" />
+              <AgentWorking agent="Director agent" task="Reading your sources, writing the script scene by scene and choosing the right visual for each" />
               {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-[132px]" />)}
             </div>
           ) : p.scenes.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-line-strong bg-panel/50 px-6 py-14 text-center">
               <Sparkles className="mx-auto h-5 w-5 text-body" />
               <p className="mt-3 text-[16px] font-semibold">No storyboard yet</p>
-              <p className="mx-auto mt-1 max-w-sm text-[13px] text-body">Ask the director to write one from your topic and sources.</p>
-              <Button className="mt-5" onClick={() => run(() => api.storyboard(p.id))}><Wand2 className="h-4 w-4" />Direct storyboard</Button>
+              <p className="mx-auto mt-1 max-w-sm text-[13px] text-body">The director writes one from your topic and sources. Nothing renders until you approve it.</p>
+              <Button className="mt-5" onClick={() => run(() => api.storyboard(p.id))}><Wand2 className="h-4 w-4" />Write storyboard</Button>
             </div>
           ) : (
-            <Board p={p} sel={sel} setSel={setSel} setP={setP} engines={engines} />
+            <Board p={p} sel={sel} setSel={setSel} setP={setP} />
           )}
         </section>
 
@@ -162,24 +175,8 @@ function TranslateMenu({ onPick, exclude, disabled }: { onPick: (l: string) => v
   );
 }
 
-function RouteBar({ p, sel, setSel }: { p: Project; sel: string | null; setSel: (s: string) => void }) {
-  const est = (d?: number | null, n?: string) => d || Math.max(3, (n?.split(/\s+/).length ?? 10) / 2.6);
-  const sum = p.scenes.reduce((a, s) => a + est(s.duration, s.narration), 0);
-  return (
-    <div className="mt-6">
-      <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
-        {p.scenes.map((s, i) => (
-          <button key={s.id} title={`b${i + 1} · ${engineStyle(s.engine).short}`} onClick={() => setSel(s.id)}
-            className={`min-w-[6px] transition-opacity ${sel && sel !== s.id ? "opacity-35" : "opacity-100"}`}
-            style={{ flexGrow: est(s.duration, s.narration) / sum, background: engineStyle(s.engine).color }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Board({ p, sel, setSel, setP, engines }: {
-  p: Project; sel: string | null; setSel: (s: string | null) => void; setP: (p: Project) => void; engines: Record<string, { label: string }>;
+function Board({ p, sel, setSel, setP }: {
+  p: Project; sel: string | null; setSel: (s: string | null) => void; setP: (p: Project) => void;
 }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const drop = (target: string) => {
@@ -191,7 +188,7 @@ function Board({ p, sel, setSel, setP, engines }: {
   return (
     <div className="space-y-3">
       {p.scenes.map((s, i) => (
-        <SceneRow key={s.id} s={s} i={i} aspect={p.aspect} on={sel === s.id} label={engines[s.engine]?.label}
+        <SceneRow key={s.id} s={s} i={i} aspect={p.aspect} on={sel === s.id}
           cast={(p.cast ?? []).filter((c) => c.kind !== "style" && s.cast?.includes(c.id))}
           flagged={!!p.qa?.flagged?.includes(s.id) && !p.qa?.stale}
           factFlag={!!p.factcheck?.flagged?.includes(s.id)}
@@ -201,13 +198,24 @@ function Board({ p, sel, setSel, setP, engines }: {
       ))}
       <button onClick={() => api.addScene(p.id).then(setP)}
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line-strong py-4 text-[13px] font-medium text-body hover:bg-panel">
-        + Add a beat
+        + Add a scene
       </button>
-      {p.render_url && (
-        <a href={p.render_url} download className="flex items-center justify-center gap-2 py-2 text-[12px] font-medium text-muted hover:text-ink">
-          <Download className="h-3.5 w-3.5" /> Download the last render
-        </a>
-      )}
     </div>
   );
+}
+
+const primaryCls = "inline-flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-4.5 text-[13px] font-semibold text-white transition-all hover:bg-ink-soft active:scale-[0.98]";
+
+/** The single next step, which depends on where the project is: write, render, update or download. */
+function Primary({ p, working, stale, ready, run }: {
+  p: Project; working: boolean; stale: boolean; ready: number; run: (f: () => Promise<Project>) => void;
+}) {
+  if (working) {
+    const what = p.render_status === "directing" ? "Writing storyboard" : p.render_status === "assembling" ? "Finishing video" : `Rendering ${ready}/${p.scenes.length}`;
+    return <Button loading>{what}</Button>;
+  }
+  if (!p.scenes.length) return <Button onClick={() => run(() => api.storyboard(p.id))}><Wand2 className="h-4 w-4" />Write storyboard</Button>;
+  if (!p.render_url) return <Button onClick={() => run(() => api.render(p.id))}><Film className="h-4 w-4" />Render video</Button>;
+  if (stale) return <Button onClick={() => run(() => api.render(p.id))} title="Re-renders only the scenes that changed, then exports again"><RefreshCw className="h-4 w-4" />Update video</Button>;
+  return <a href={p.render_url} download className={primaryCls}><Download className="h-4 w-4" />Download</a>;
 }

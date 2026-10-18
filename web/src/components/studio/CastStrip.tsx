@@ -12,7 +12,7 @@ export const CAST_KIND = {
   object: { label: "Object", icon: Box },
 } as const;
 
-/** Flow-style ingredients: defined once, reused by every generated beat they appear in. */
+/** Flow-style ingredients: defined once, reused by every generated scene they appear in. */
 export function CastStrip({ p, setP }: { p: Project; setP: (p: Project) => void }) {
   const [open, setOpen] = useState<string | "new" | null>(null);
   const item = p.cast.find((c) => c.id === open) ?? null;
@@ -22,8 +22,8 @@ export function CastStrip({ p, setP }: { p: Project; setP: (p: Project) => void 
     <div className="mt-5 rounded-2xl border border-line bg-white p-3">
       <div className="flex items-center gap-3 overflow-x-auto scrollbar-thin">
         <div className="shrink-0 pl-1 pr-1 sm:pr-2">
-          <p className="text-[13px] font-semibold">Cast<span className="hidden sm:inline"> &amp; sets</span></p>
-          <p className="hidden text-[11px] text-muted sm:block">Same look in every beat</p>
+          <p className="text-[13px] font-semibold">Characters<span className="hidden sm:inline"> &amp; places</span></p>
+          <p className="hidden text-[11px] text-muted sm:block">Consistent in every scene</p>
         </div>
         {p.cast.map((c) => {
           const K = CAST_KIND[c.kind];
@@ -42,7 +42,7 @@ export function CastStrip({ p, setP }: { p: Project; setP: (p: Project) => void 
               <span className="min-w-0">
                 <span className="block max-w-[140px] truncate text-[12.5px] font-semibold">{c.name}</span>
                 <span className="flex items-center gap-1 text-[11px] text-muted">
-                  <K.icon className="h-3 w-3" />{K.label}{c.kind !== "style" && ` · ${uses(c.id)} beats`}
+                  <K.icon className="h-3 w-3" />{K.label}{c.kind !== "style" && ` · ${uses(c.id)} ${uses(c.id) === 1 ? "scene" : "scenes"}`}
                   {c.status === "error" && <span className="text-bad"> · failed</span>}
                 </span>
               </span>
@@ -104,8 +104,8 @@ function CastEditor({ p, item, setP, close }: { p: Project; item?: CastItem; set
           )}
         </div>
         <p className="text-[11px] leading-snug text-muted">
-          {kind === "style" ? "Every generated beat is drawn in this style." : "Beats that include this item get its reference image, so it looks the same every time."}
-          {" "}Re-render a beat to apply changes.
+          {kind === "style" ? "Every AI-generated scene is drawn in this style." : "Scenes that include this get its reference image, so it looks the same every time."}
+          {" "}Re-render a scene to apply changes.
         </p>
       </div>
     </div>

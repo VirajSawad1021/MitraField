@@ -30,7 +30,7 @@ export type Project = {
   pace?: number
   id: string; title: string; topic: string; audience: string; language: string; aspect: '16:9' | '9:16'
   length: 'short' | 'medium' | 'long'; voice: string; music: boolean
-  sources: Source[]; scenes: Scene[]; cast: CastItem[]; render_status: string; render_url?: string | null; render_error?: string | null
+  sources: Source[]; scenes: Scene[]; cast: CastItem[]; render_status: string; render_url?: string | null; outdated?: boolean; render_error?: string | null
   character_url?: string | null; updated: number
 }
 export type EngineInfo = { name: string; label: string; blurb: string; precise: boolean }

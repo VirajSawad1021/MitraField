@@ -208,6 +208,12 @@ def ensure_music(p):
     return f
 
 
+def render_sig(p) -> str:
+    """Fingerprint of what an export is made of: every scene's clip and narration, in order. Clips and audio are
+    named by content hash, so any edit, re-render, reorder, insert or delete changes it."""
+    return hashlib.sha1(json.dumps([[s.clip, s.audio] for s in p.scenes]).encode()).hexdigest()[:16]
+
+
 @costs.tracked
 def assemble(pid):
     store.mutate(pid, lambda p: setattr(p, "render_status", "assembling"))
@@ -260,6 +266,7 @@ def assemble(pid):
             pp.render_status, pp.render_path, pp.render_error = "done", str(final), None
             pp.qa = {"status": "queued", "t": time.time()}
             pp.mark_id = provenance.mark_hex(mark) if mark is not None else None
+            pp.render_sig = render_sig(p)
         store.mutate(pid, done)
         jobs.enqueue("qa", pid=pid)   # every finished video gets a quality check
         return final

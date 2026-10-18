@@ -6,7 +6,7 @@ import { ArrowRight, FileText, Monitor, Smartphone, Upload, X } from "lucide-rea
 import { AppShell } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Eyebrow, Field, Segmented, inputCls } from "@/components/ui";
 import { api, MAX_INSTRUCTIONS, type Meta } from "@/lib/api";
-import { CreateVoiceLink, VoiceSelect } from "@/components/VoiceSelect";
+import { NarratorPicker } from "@/components/NarratorPicker";
 import { LookPicker } from "@/components/LookPicker";
 
 const EXAMPLES = [
@@ -17,8 +17,8 @@ const EXAMPLES = [
   "How does GPS know exactly where you are?",
 ];
 const DIRECTIONS = [
-  "Use only manim animations. No generated images or video.",
-  "Text and typography only: title cards, no images or video.",
+  "Only math animations, no AI images or video.",
+  "Text only: title cards, no images or video.",
   "Charts, diagrams and whiteboard sketches only.",
 ];
 const LANGS = ["English", "Hindi", "Nepali", "Japanese", "Indonesian", "Korean", "Spanish", "Tamil", "Vietnamese"];
@@ -48,7 +48,12 @@ function NewVideo() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [voice, setVoice] = useState("");
   const [look, setLook] = useState("cinematic");
-  useEffect(() => { api.meta().then((m) => { setMeta(m); setVoice((v) => v || m.default_voice); }).catch(() => {}); }, []);
+  useEffect(() => {
+    const load = () => api.meta().then((m) => { setMeta(m); setVoice((v) => v || m.default_voice); }).catch(() => {});
+    load();
+    window.addEventListener("focus", load);   // a voice cloned in another tab shows up on return
+    return () => window.removeEventListener("focus", load);
+  }, []);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -69,7 +74,7 @@ function NewVideo() {
   };
 
   return (
-    <main className="mx-auto max-w-[1080px] px-5 pb-24 pt-10 sm:px-8">
+    <main className="mx-auto max-w-[1080px] px-5 pt-10 sm:px-8">
       <Eyebrow>New video</Eyebrow>
       <h1 className="mt-1.5 text-[32px] font-semibold tracking-tight sm:text-[36px]">What should it explain?</h1>
       <p className="mt-1.5 max-w-xl text-[14px] leading-relaxed text-body">
@@ -89,10 +94,10 @@ function NewVideo() {
           </div>
 
           <div className="mt-6 border-t border-line pt-5">
-            <p className="text-[12px] font-semibold">Direction <span className="font-normal text-muted">(optional)</span></p>
-            <p className="mb-3 mt-0.5 text-[11px] text-muted">Tell the director how to make it, in your own words. It follows this over its defaults, for example to use only manim or only text.</p>
-            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={3} maxLength={MAX_INSTRUCTIONS}
-              placeholder="e.g. Use only manim animations. No generated images or video." className={`${inputCls} resize-none text-[13px]`} />
+            <p className="text-[12px] font-semibold">Instructions for the director <span className="font-normal text-muted">(optional)</span></p>
+            <p className="mb-3 mt-0.5 text-[11px] text-muted">Anything it must follow, in your own words. It takes these over its own defaults.</p>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={2} maxLength={MAX_INSTRUCTIONS}
+              placeholder="e.g. Only math animations, no AI images or video." className={`${inputCls} resize-none text-[13px]`} />
             <div className="mt-2 flex flex-wrap gap-2">
               {DIRECTIONS.map((x) => (
                 <button key={x} type="button" onClick={() => setInstructions(x)} className="rounded-full border border-line px-3 py-1 text-[12px] text-body transition-colors hover:border-line-strong hover:text-ink">{x}</button>
@@ -117,19 +122,22 @@ function NewVideo() {
                 {LANGS.map((l) => <option key={l}>{l}</option>)}
               </select>
             </Field>
-            <Field label="Narrator" hint={<>Pick a voice, or <CreateVoiceLink meta={meta} /> from a short recording. Gemini voices cover more languages.</>}>
-              <VoiceSelect meta={meta} value={voice} onChange={setVoice} className={inputCls} />
-            </Field>
             <Field label="Audience" hint="The director adjusts vocabulary, pace and examples.">
               <input list="aud" value={audience} onChange={(e) => setAudience(e.target.value)} className={inputCls} />
               <datalist id="aud">{AUDIENCES.map((a) => <option key={a} value={a} />)}</datalist>
             </Field>
           </div>
 
+          <div className="mt-6 border-t border-line pt-5">
+            <p className="text-[12px] font-semibold">Narrator</p>
+            <p className="mb-3 mt-0.5 text-[11px] text-muted">Cloned voices sound like a real person and can narrate in other languages too. Gemini voices are an alternative.</p>
+            <NarratorPicker meta={meta} value={voice} onChange={setVoice} />
+          </div>
+
           {meta?.looks && (
             <div className="mt-6 border-t border-line pt-5">
               <p className="text-[12px] font-semibold">Look</p>
-              <p className="mb-3 mt-0.5 text-[11px] text-muted">The art direction for every generated shot and character. Charts, maps and math stay exact in any look.</p>
+              <p className="mb-3 mt-0.5 text-[11px] text-muted">The art style for AI-generated pictures and characters. Charts, maps and math stay accurate in any look.</p>
               <LookPicker looks={meta.looks} value={look} onChange={setLook} />
             </div>
           )}
@@ -162,13 +170,19 @@ function NewVideo() {
         </Card>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-        <p className="text-[12px] text-muted">Nothing renders until you approve the storyboard.</p>
-        <Button size="lg" onClick={go} loading={busy} disabled={!topic.trim()}>
-          Direct the storyboard <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
       {err && <div className="mt-4"><ErrorNote message={err} /></div>}
+
+      {/* the one action, always in view however long the form gets */}
+      <div className="sticky bottom-0 z-20 -mx-5 mt-6 border-t border-line bg-cream/90 px-5 py-3 backdrop-blur-md sm:-mx-8 sm:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <p className="min-w-0 text-[12px] text-muted">
+            {topic.trim() ? "Nothing renders until you approve the storyboard." : "Type a question above to start."}
+          </p>
+          <Button size="lg" onClick={go} loading={busy} disabled={!topic.trim()} className="shrink-0">
+            Write storyboard <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </main>
   );
 }

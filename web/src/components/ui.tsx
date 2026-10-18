@@ -46,7 +46,7 @@ export function Card({ className = "", children, ...props }: React.HTMLAttribute
   );
 }
 
-export type Tone = "neutral" | "good" | "warn" | "bad" | "info" | "dark";
+export type Tone = "neutral" | "good" | "warn" | "bad" | "info" | "dark" | "ai";
 const tones: Record<Tone, string> = {
   neutral: "bg-panel-2 text-body",
   good: "bg-good-bg text-good",
@@ -54,6 +54,7 @@ const tones: Record<Tone, string> = {
   bad: "bg-bad-bg text-bad",
   info: "bg-info-bg text-info",
   dark: "bg-ink text-white",
+  ai: "bg-[#efe7f6] text-[#6b4f8a]",   // the AI-generated label
 };
 
 export function Badge({ tone = "neutral", children, className = "", title }: { tone?: Tone; children: React.ReactNode; className?: string; title?: string }) {

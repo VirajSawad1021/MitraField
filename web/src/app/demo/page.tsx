@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Clock, Layers, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Clock, Layers, Sparkles } from "lucide-react";
 import { SiteShell } from "@/components/marketing/Chrome";
 import { Reveal } from "@/components/marketing/Reveal";
 import { DEMOS, STEPS } from "@/lib/demo";
@@ -17,7 +17,7 @@ export default function DemoPage() {
   return (
     <SiteShell>
       <section className="mx-auto max-w-[1240px] px-5 pb-10 pt-14 sm:px-8 sm:pt-20">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted animate-rise">Live demo</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted animate-rise">Examples</p>
         <h1 className="mt-3 max-w-[900px] text-[42px] font-medium leading-[1.03] tracking-[-0.035em] sm:text-[60px] animate-rise">
           One question in.<br /><span className="text-[#9b988f]">A finished explainer out.</span>
         </h1>
@@ -49,11 +49,11 @@ export default function DemoPage() {
                 <p className="text-[12px] text-muted">Prompt</p>
                 <p className="mt-1 text-[16px] font-medium leading-snug tracking-tight">&ldquo;{d.prompt}&rdquo;</p>
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <Stat icon={<Layers className="h-3.5 w-3.5" />} v={`${d.beats}`} l="beats" />
+                  <Stat icon={<Layers className="h-3.5 w-3.5" />} v={`${d.beats}`} l="scenes" />
                   <Stat icon={<Clock className="h-3.5 w-3.5" />} v={d.length} l={tall ? "vertical Short" : "landscape"} />
-                  <Stat icon={<ShieldCheck className="h-3.5 w-3.5" />} v={`${d.exact}/${d.beats}`} l="exact beats" />
+                  <Stat icon={<Sparkles className="h-3.5 w-3.5" />} v={`${d.beats - d.exact}/${d.beats}`} l="AI-generated" />
                 </div>
-                <p className="mt-5 text-[12px] text-muted">How the director routed it</p>
+                <p className="mt-5 text-[12px] text-muted">The visual the director chose for each scene</p>
                 <div className="mt-2 flex h-2.5 gap-0.5 overflow-hidden rounded-full">
                   {d.route.map((e, i) => <span key={i} className="flex-1" style={{ background: engineStyle(e).color }} />)}
                 </div>
@@ -61,7 +61,7 @@ export default function DemoPage() {
                   {[...new Set(d.route)].map((e) => <EngineChip key={e} engine={e} />)}
                 </div>
                 <p className="mt-5 text-[13px] leading-relaxed text-body">{d.note}</p>
-                <p className="mt-4 text-[12px] text-muted">Narrated by {d.voice} · rendered in {d.renderTime} on one small server</p>
+                <p className="mt-4 text-[12px] text-muted">Narrated by {d.voice}, a cloned voice · rendered in {d.renderTime}</p>
               </div>
             </div>
           </div>
@@ -119,7 +119,7 @@ export default function DemoPage() {
             <div className="flex flex-wrap gap-3">
               <Link href={`/studio?p=${DEMOS[active].id}`} className="inline-flex h-12 items-center rounded-full bg-white px-6 text-[15px] font-medium text-ink hover:bg-cream">Open in studio</Link>
               <Link href="/new" className="inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[15px] font-medium text-white hover:bg-ink-soft">
-                Start a video <ArrowRight className="h-4 w-4" />
+                Create video <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>

@@ -79,13 +79,13 @@ function DirectPane() {
       <div className="rounded-2xl border border-line">
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <p className="text-[14px] font-semibold">Storyboard</p>
-          <p className="text-[12px] text-muted">9 beats · 0:49</p>
+          <p className="text-[12px] text-muted">9 scenes · 0:49</p>
         </div>
         <div className="space-y-2 p-3">
           {BOARD.slice(0, 5).map((b, i) => {
             return (
               <div key={i} className="flex items-start gap-3 rounded-xl border border-line px-3 py-2.5" style={{ animation: `rise .6s ${i * 90}ms both cubic-bezier(.2,.7,.2,1)` }}>
-                <span className="mt-0.5 font-mono text-[10px] text-muted">b{i + 1}</span>
+                <span className="mt-0.5 font-mono text-[10px] text-muted">{i + 1}</span>
                 <p className="flex-1 text-[12px] leading-snug text-ink">{b.n}</p>
                 <EngineChip engine={b.e} size="sm" />
               </div>
@@ -113,7 +113,7 @@ function RoutePane() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-[13px] font-semibold">{s.short}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${s.kind === "exact" ? "bg-good-bg text-good" : "bg-panel-2 text-body"}`}>{s.kind}</span>
+                  {s.kind === "generated" && <span className="rounded-full bg-[#efe7f6] px-2 py-0.5 text-[10px] font-semibold text-[#6b4f8a]">AI-generated</span>}
                 </div>
                 <p className="mt-0.5 line-clamp-2 text-[12px] text-body">{b.n}</p>
               </div>
@@ -122,7 +122,7 @@ function RoutePane() {
         })}
       </div>
       <p className="mt-4 flex items-center gap-2 rounded-xl bg-good-bg px-4 py-2.5 text-[12px] text-good">
-        <ShieldCheck className="h-4 w-4" /> Numbers, maps and math go to exact engines. Generated pixels never carry a fact.
+        <ShieldCheck className="h-4 w-4" /> Numbers, maps and math are drawn from data and code. AI-generated pictures never carry a fact.
       </p>
     </div>
   );
@@ -167,7 +167,7 @@ function TranslatePane() {
         <Languages className="h-5 w-5 text-ink" />
         <p className="mt-3 text-[15px] font-semibold">Same visuals. New voice.</p>
         <p className="mt-1.5 text-[13px] leading-relaxed text-body">
-          The director re-writes the narration for natural speech in each language. Generated shots are reused, and on-screen text in
+          The director re-writes the narration for natural speech in each language. AI-generated shots are reused, and on-screen text in
           maps, math and titles is re-rendered in the new language.
         </p>
       </div>

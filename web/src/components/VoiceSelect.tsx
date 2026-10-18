@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { Meta } from "@/lib/api";
 import { voiceGroups } from "@/lib/voices";
 
@@ -18,6 +17,3 @@ export function VoiceSelect({ meta, value, onChange, className, title }: {
     </select>
   );
 }
-
-export const CreateVoiceLink = ({ meta }: { meta: Meta | null }) =>
-  meta?.cloning ? <Link href="/voices" className="underline underline-offset-2 hover:text-ink">Create your own voice</Link> : null;

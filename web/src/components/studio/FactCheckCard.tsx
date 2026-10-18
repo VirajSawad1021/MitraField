@@ -54,7 +54,7 @@ export function FactCheckCard({ p, setP, select }: { p: Project; setP: (p: Proje
               {bad.map(({ c, i }) => (
                 <li key={i} className="rounded-xl border border-line p-3">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => c.sid && select(c.sid)} className="font-mono text-[11px] font-semibold text-muted hover:text-ink">b{c.beat}</button>
+                    <button onClick={() => c.sid && select(c.sid)} className="text-[11px] font-semibold text-muted hover:text-ink">Scene {c.beat}</button>
                     <span className={`rounded-full px-2 py-px text-[10.5px] font-semibold ${TONE[c.verdict]}`}>{c.verdict}</span>
                   </div>
                   <p className="mt-1.5 text-[12.5px] leading-snug text-ink">&ldquo;{c.claim}&rdquo;</p>
@@ -75,7 +75,7 @@ export function FactCheckCard({ p, setP, select }: { p: Project; setP: (p: Proje
               </button>
               {open && (
                 <div className="mt-2 space-y-1.5">
-                  {good.map((c, k) => <p key={k} className="text-[11.5px] leading-snug text-body"><span className="font-mono text-muted">b{c.beat}</span> {c.claim}</p>)}
+                  {good.map((c, k) => <p key={k} className="text-[11.5px] leading-snug text-body"><span className="font-semibold text-muted">Scene {c.beat}</span> {c.claim}</p>)}
                   {(fc.web ?? []).map((w, k) => (
                     <a key={k} href={w.uri} target="_blank" rel="noreferrer" className="block truncate text-[11.5px] text-info underline underline-offset-2">{w.title}</a>
                   ))}

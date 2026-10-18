@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Mic, Square, Trash2, Upload } from "lucide-react";
+import { Check, Info, Mic, Square, Trash2, Upload } from "lucide-react";
 import { Badge, Button, Card, ErrorNote, Eyebrow, Field, inputCls } from "@/components/ui";
 import { api, type Meta, type VoiceProfile } from "@/lib/api";
 
@@ -28,17 +28,22 @@ export function VoiceLab() {
       <Eyebrow>Voices</Eyebrow>
       <h1 className="mt-1.5 text-[32px] font-semibold tracking-tight sm:text-[36px]">Narrate in your own voice</h1>
       <p className="mt-1.5 max-w-xl text-[14px] leading-relaxed text-body">
-        Record or upload 10 to 20 seconds of clear speech. The voice is cloned once, then available as a narrator for every video.
+        Record about 15 seconds of clear speech. It is cloned once, then narrates every video you make, in other languages too.
       </p>
 
       {meta && !meta.cloning && (
-        <div className="mt-6"><ErrorNote message="Voice cloning is not enabled on this deployment. Gemini voices are available." /></div>
+        <p className="mt-6 flex items-start gap-2 rounded-xl bg-info-bg px-4 py-3 text-[13px] text-info">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          Voice cloning is switched off on this deployment, so new voices cannot be made here. The samples below show what it sounds like, and Gemini voices are available for narration.
+        </p>
       )}
+
+      <div className="mt-8"><VoiceSamples /></div>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_1fr]">
         <Card className="p-5">
           <p className="text-[15px] font-semibold">Your voices</p>
-          {mine.length === 0 && <p className="mt-3 text-[13px] text-muted">None yet. Create your first voice on the right.</p>}
+          {mine.length === 0 && <p className="mt-3 text-[13px] text-muted">{meta?.cloning ? "None yet. Create your first voice with the form." : "None yet."}</p>}
           <ul className="mt-3 space-y-2">
             {mine.map((v) => (
               <li key={v.id} className="flex items-center gap-3 rounded-xl bg-panel px-3.5 py-3">
@@ -57,7 +62,7 @@ export function VoiceLab() {
             ))}
           </ul>
           {voices.some((v) => v.builtin) && (
-            <p className="mt-4 text-[12px] text-muted">Channel voices: {voices.filter((v) => v.builtin).map((v) => v.name).join(", ")}</p>
+            <p className="mt-4 text-[12px] text-muted">Also ready to use: {voices.filter((v) => v.builtin).map((v) => v.name).join(", ")}, the channel&apos;s own cloned voices.</p>
           )}
         </Card>
 
@@ -156,5 +161,25 @@ function Create({ onDone }: { onDone: () => void }) {
         {err && <ErrorNote message={err} />}
       </div>
     </Card>
+  );
+}
+
+const SAMPLES = [
+  { src: "/voice/johnny-en.mp3", lang: "English", line: "Twenty percent of the world's oil passes through a channel just twenty one miles wide." },
+  { src: "/voice/johnny-hi.mp3", lang: "Hindi", line: "The same cloned voice, narrating the Hindi version of the same video." },
+];
+
+/** What a cloned narrator sounds like: one voice (Johnny, cloned from a short recording) in two languages. */
+export function VoiceSamples({ dark = false }: { dark?: boolean }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {SAMPLES.map((x) => (
+        <div key={x.src} className={`rounded-2xl border p-4 ${dark ? "border-white/15 bg-white/10" : "border-line bg-white"}`}>
+          <p className="text-[13px] font-semibold">Johnny, cloned voice · {x.lang}</p>
+          <p className={`mt-1 text-[12px] leading-snug ${dark ? "text-white/70" : "text-body"}`}>{x.line}</p>
+          <audio controls preload="none" src={x.src} className="mt-3 h-9 w-full" />
+        </div>
+      ))}
+    </div>
   );
 }

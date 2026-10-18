@@ -17,7 +17,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
   const [adv, setAdv] = useState(false);
   const [params, setParams] = useState(JSON.stringify(s.params, null, 2));
   const [paramErr, setParamErr] = useState(false);
-  // follow server-side changes (e.g. the director rewrote this beat)
+  // follow server-side changes (e.g. the director rewrote this scene)
   const sig = JSON.stringify([s.narration, s.brief, s.params]);
   const [seen, setSeen] = useState(sig);
   if (sig !== seen) {
@@ -46,8 +46,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-muted">b{idx + 1}</span>
-            <span className="text-[14px] font-semibold">Beat {idx + 1} of {p.scenes.length}</span>
+            <span className="text-[14px] font-semibold">Scene {idx + 1} of {p.scenes.length}</span>
             {s.duration ? <Badge>{s.duration.toFixed(1)}s</Badge> : null}
           </div>
           <button onClick={close} className="rounded-full p-1 text-muted hover:bg-panel-2 hover:text-ink"><X className="h-4 w-4" /></button>
@@ -76,7 +75,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
             {p.qa?.flagged?.includes(s.id) && (
               <button onClick={() => api.fixScene(p.id, s.id).then(setP)} disabled={busy}
                 className="mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3.5 text-[12px] font-semibold text-white hover:bg-ink-soft disabled:bg-[#b9b6ae]">
-                <Wrench className="h-3.5 w-3.5" />Fix this beat
+                <Wrench className="h-3.5 w-3.5" />Fix this scene
               </button>
             )}
           </div>
@@ -89,7 +88,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
           <textarea value={narr} onChange={(e) => setNarr(e.target.value)} onBlur={save} rows={3} className={`${inputCls} mt-2 resize-none leading-relaxed`} />
         </div>
         <div>
-          <Eyebrow>Engine</Eyebrow>
+          <Eyebrow>Visual</Eyebrow>
           <div className="mt-2 grid grid-cols-4 gap-1.5">
             {meta.engines.map((e) => {
               const es = engineStyle(e.name);
@@ -107,7 +106,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
         </div>
         {st.kind === "generated" && (p.cast ?? []).some((c) => c.kind !== "style") && (
           <div>
-            <Eyebrow>In this beat</Eyebrow>
+            <Eyebrow>In this scene</Eyebrow>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {p.cast.filter((c) => c.kind !== "style").map((c) => {
                 const on = s.cast?.includes(c.id);
@@ -123,7 +122,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[11px] text-muted">Selected items are drawn from their reference images in this beat.</p>
+            <p className="mt-1.5 text-[11px] text-muted">Selected characters and places are drawn from their reference images.</p>
           </div>
         )}
         <div>
@@ -131,16 +130,16 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
           <textarea value={brief} onChange={(e) => setBrief(e.target.value)} onBlur={save} rows={3} className={`${inputCls} mt-2 resize-none text-[13px] leading-relaxed`} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={render} loading={busy}>{!busy && <RefreshCw className="h-4 w-4" />}{s.status === "ready" ? "Regenerate" : "Render beat"}</Button>
+          <Button onClick={render} loading={busy}>{!busy && <RefreshCw className="h-4 w-4" />}{s.status === "ready" ? "Regenerate" : "Render scene"}</Button>
           <Button variant="secondary" onClick={() => api.addScene(p.id, s.id).then(setP)}><CopyPlus className="h-4 w-4" />Insert after</Button>
-          <Button variant="ghost" className="ml-auto hover:text-bad" onClick={() => confirm("Delete this beat?") && api.delScene(p.id, s.id).then((np) => { setP(np); close(); })}>
+          <Button variant="ghost" className="ml-auto hover:text-bad" onClick={() => confirm("Delete this scene?") && api.delScene(p.id, s.id).then((np) => { setP(np); close(); })}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </Card>
 
       <Card className="p-4">
-        <Eyebrow>Instruct the director</Eyebrow>
+        <Eyebrow>Ask the director</Eyebrow>
         <div className="mt-2 flex gap-2">
           <input value={ask} onChange={(e) => setAsk(e.target.value)} onKeyDown={(e) => e.key === "Enter" && instruct(ask)}
             placeholder="e.g. Explain it with a pizza analogy" className={inputCls} disabled={busy} />
@@ -153,12 +152,12 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
               className="rounded-full border border-line px-2.5 py-1 text-[11.5px] text-body transition-colors hover:border-line-strong hover:text-ink disabled:opacity-50">{q}</button>
           ))}
         </div>
-        <p className="mt-3 text-[11px] leading-snug text-muted">Only this beat changes. The director keeps it consistent with the beats around it.</p>
+        <p className="mt-3 text-[11px] leading-snug text-muted">Only this scene changes. The director keeps it consistent with the scenes around it.</p>
       </Card>
 
       <Card className="overflow-hidden">
         <button onClick={() => setAdv(!adv)} className="flex w-full items-center justify-between px-4 py-3 text-[13px] font-semibold">
-          Engine parameters <ChevronDown className={`h-4 w-4 text-muted transition-transform ${adv ? "rotate-180" : ""}`} />
+          Advanced: raw parameters <ChevronDown className={`h-4 w-4 text-muted transition-transform ${adv ? "rotate-180" : ""}`} />
         </button>
         {adv && (
           <div className="space-y-2 border-t border-line p-4">

@@ -6,11 +6,11 @@ import { ArrowRight, Menu, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 const links = [
-  { href: "/#product", label: "Product" },
-  { href: "/#engines", label: "Engines" },
   { href: "/#how", label: "How it works" },
-  { href: "/#watch", label: "Watch a video" },
-  { href: "/demo", label: "Live demo" },
+  { href: "/#engines", label: "Visuals" },
+  { href: "/#voice", label: "Your voice" },
+  { href: "/#trust", label: "Trust" },
+  { href: "/demo", label: "Examples" },
   { href: "/#faq", label: "FAQ" },
 ];
 
@@ -41,7 +41,7 @@ export function SiteNav() {
             Projects
           </Link>
           <Link href="/new" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-ink px-5 text-[14px] font-medium text-white hover:bg-ink-soft">
-            New video <ArrowRight className="h-4 w-4" />
+            Create video <ArrowRight className="h-4 w-4" />
           </Link>
           <button onClick={() => setOpen(!open)} className="rounded-full p-2 text-ink lg:hidden" aria-label="Menu">
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -53,7 +53,8 @@ export function SiteNav() {
           {links.map((l) => (
             <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="block border-b border-line py-3.5 text-[16px] text-ink">{l.label}</Link>
           ))}
-          <Link href="/projects" className="mt-4 block text-center text-[15px] font-medium text-body">Projects</Link>
+          <Link href="/projects" className="block border-b border-line py-3.5 text-[16px] text-ink">Projects</Link>
+          <Link href="/verify" className="block py-3.5 text-[16px] text-ink">Verify a video</Link>
         </nav>
       )}
     </header>
@@ -62,9 +63,9 @@ export function SiteNav() {
 
 export function SiteFooter() {
   const cols = [
-    { title: "Product", items: [["How it works", "/#how"], ["The engines", "/#engines"], ["Live demo", "/demo"], ["FAQ", "/#faq"]] },
-    { title: "Make", items: [["New video", "/new"], ["Vertical Short", "/new?aspect=9:16"], ["From your notes", "/new#sources"], ["Projects", "/projects"]] },
-    { title: "Engines", items: [["Math animation", "/#engines"], ["Globe & maps", "/#engines"], ["Whiteboard", "/#engines"], ["Veo shots", "/#engines"]] },
+    { title: "Product", items: [["How it works", "/#how"], ["Visuals", "/#engines"], ["Examples", "/demo"], ["FAQ", "/#faq"]] },
+    { title: "Make", items: [["Create video", "/new"], ["Vertical Short", "/new?aspect=9:16"], ["Clone your voice", "/voices"], ["Projects", "/projects"]] },
+    { title: "Trust", items: [["Fact and quality checks", "/#trust"], ["Verify a video", "/verify"]] },
     { title: "Project", items: [["AI Builder Cup 2026", "/#about"], ["GitHub", "https://github.com/VirajSawad1021/MitraField"]] },
   ];
   return (
@@ -74,7 +75,7 @@ export function SiteFooter() {
           <div>
             <Logo />
             <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-body">
-              The explainer studio where an AI director writes the story and sends every beat to the engine that can show it truthfully.
+              The explainer studio where an AI director writes the story and picks the visual that can show each scene truthfully.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
@@ -91,7 +92,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6 text-[12px] text-muted">
-          <span>© 2026 MitraField · Viraj Sawad · AI Builder Cup 2026</span>
+          <span>© 2026 MitraField · Viraj Sawad, Gaurav Giri · The Mitra Team · AI Builder Cup 2026</span>
           <span>Built with Gemini, Veo, Nano Banana, Lyria and Manim</span>
         </div>
       </div>
