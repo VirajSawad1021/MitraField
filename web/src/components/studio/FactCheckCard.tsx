@@ -23,13 +23,19 @@ export function FactCheckCard({ p, setP, select }: { p: Project; setP: (p: Proje
     <Card className="p-4">
       <div className="flex items-center justify-between">
         <Eyebrow>Fact check</Eyebrow>
-        {!busy && (
+        {!busy && fc && (
           <button onClick={() => api.runFactcheck(p.id).then(setP)} title="Check again"
             className="rounded-full p-1 text-muted hover:bg-panel-2 hover:text-ink"><RefreshCw className="h-3.5 w-3.5" /></button>
         )}
       </div>
       {!fc ? (
-        <p className="mt-2 text-[12px] text-body">Checks every number and claim against your sources and Google Search.</p>
+        <div className="mt-2">
+          <p className="text-[12px] text-body">Checks every number and claim against your sources and Google Search.</p>
+          <button onClick={() => api.runFactcheck(p.id).then(setP)}
+            className="mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3.5 text-[12px] font-semibold text-white hover:bg-ink-soft">
+            <SearchCheck className="h-3.5 w-3.5" />Check the facts
+          </button>
+        </div>
       ) : busy ? (
         <p className="mt-3 flex items-center gap-2 text-[13px] text-body"><Loader2 className="h-4 w-4 animate-spin" />Checking claims with Google Search…</p>
       ) : fc.status === "error" ? (

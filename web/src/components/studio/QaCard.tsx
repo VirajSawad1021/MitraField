@@ -8,20 +8,28 @@ import { api, type Project } from "@/lib/api";
 export function QaCard({ p, setP, select }: { p: Project; setP: (p: Project) => void; select: (sid: string) => void }) {
   const qa = p.qa;
   if (!p.render_url) return null;
-  const busy = !qa || qa.status === "queued" || qa.status === "checking";
+  const busy = qa?.status === "queued" || qa?.status === "checking";
   const idx = (sid: string) => p.scenes.findIndex((s) => s.id === sid);
 
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
         <Eyebrow>Quality check</Eyebrow>
-        {!busy && (
+        {!busy && qa && (
           <button onClick={() => api.runQa(p.id).then(setP)} title="Check again"
             className="rounded-full p-1 text-muted hover:bg-panel-2 hover:text-ink"><RefreshCw className="h-3.5 w-3.5" /></button>
         )}
       </div>
 
-      {busy ? (
+      {!qa ? (
+        <div className="mt-2">
+          <p className="text-[12px] text-body">Not checked yet. Gemini reviews every beat, and ffmpeg checks the picture and sound.</p>
+          <button onClick={() => api.runQa(p.id).then(setP)}
+            className="mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3.5 text-[12px] font-semibold text-white hover:bg-ink-soft">
+            <ShieldCheck className="h-3.5 w-3.5" />Check this video
+          </button>
+        </div>
+      ) : busy ? (
         <p className="mt-3 flex items-center gap-2 text-[13px] text-body"><Loader2 className="h-4 w-4 animate-spin" />Gemini is reviewing every beat…</p>
       ) : qa.status === "error" ? (
         <p className="mt-3 text-[13px] text-bad">{qa.summary}</p>
