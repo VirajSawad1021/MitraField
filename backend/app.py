@@ -40,7 +40,8 @@ PID = re.compile(r"^[0-9a-f]{10}$")
 async def guard_writes(request: Request, call_next):
     """On a public deployment, anyone can browse; generating or editing needs the passcode
     (every write can spend money)."""
-    if PASSCODE and request.url.path.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
+    if (PASSCODE and request.url.path.startswith("/api/") and not request.url.path.startswith("/api/verify")
+            and request.method not in ("GET", "HEAD", "OPTIONS")):
         if not hmac.compare_digest(request.headers.get("x-studio-pass", "").encode(), PASSCODE.encode()):
             return JSONResponse({"detail": "passcode required"}, status_code=401)
     return await call_next(request)
@@ -200,6 +201,79 @@ def create(body: NewProject):
         p.sources.append(Source(kind="note", name="Notes", text=body.notes))
     store.save(p)
     return media_url(p)
+
+
+VID = re.compile(r"^[0-9a-f]{12}$")
+CHUNK = config.VERIFY_CHUNK_MB << 20
+MAX_CHUNKS = -(-config.VERIFY_MAX_MB // config.VERIFY_CHUNK_MB)
+
+
+def verification(vid):
+    """The record of an upload this service started. Only these ids may receive pieces, so the route cannot be used
+    to write arbitrary files."""
+    if not VID.match(vid):
+        raise HTTPException(404, "not found")
+    try:
+        return store.doc_get("verifications", vid)
+    except FileNotFoundError:
+        raise HTTPException(404, "not found")
+
+
+@api.post("/api/verify")
+def verify_start():
+    """Open a check of an uploaded video. Public (anyone may check a video), so it is capped per day; the
+    count is read-then-written, which is fine for a cap that only has to be roughly right."""
+    day = store._today()
+    try:
+        n = store.doc_get("verify_quota", day).get("n", 0)
+    except FileNotFoundError:
+        n = 0
+    if n >= config.VERIFY_DAY_CAP:
+        raise HTTPException(429, "The verifier has reached its daily limit. Try again tomorrow.")
+    store.doc_put("verify_quota", day, {"n": n + 1})
+    vid = os.urandom(6).hex()
+    store.doc_put("verifications", vid, {"id": vid, "status": "uploading", "created": time.time()})
+    return {"id": vid, "chunk_bytes": CHUNK, "max_chunks": MAX_CHUNKS}
+
+
+@api.post("/api/verify/{vid}/chunk/{n}")
+async def verify_chunk(vid: str, n: int, request: Request):
+    if verification(vid)["status"] != "uploading":
+        raise HTTPException(409, "this check is already running")
+    if not 0 <= n < MAX_CHUNKS:
+        raise HTTPException(400, f"Videos are limited to {config.VERIFY_MAX_MB} MB.")
+    body = bytearray()
+    async for part in request.stream():
+        body += part
+        if len(body) > CHUNK:
+            raise HTTPException(413, "piece too large")
+    d = config.DATA / "verify" / vid
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{n:05d}.part").write_bytes(body)
+    return {"ok": True}
+
+
+class VerifyDone(BaseModel):
+    chunks: int = Field(ge=1)
+    size: int = Field(ge=1)
+
+
+@api.post("/api/verify/{vid}/finish")
+def verify_finish(vid: str, body: VerifyDone):
+    doc = verification(vid)
+    if doc["status"] != "uploading":
+        raise HTTPException(409, "this check is already running")
+    if body.chunks > MAX_CHUNKS or body.size > MAX_CHUNKS * CHUNK or body.size > body.chunks * CHUNK:
+        raise HTTPException(400, f"Videos are limited to {config.VERIFY_MAX_MB} MB.")
+    doc["status"] = "checking"
+    store.doc_put("verifications", vid, doc)
+    jobs.enqueue("verify", vid=vid, chunks=body.chunks, size=body.size)
+    return {"ok": True}
+
+
+@api.get("/api/verify/{vid}")
+def verify_read(vid: str):
+    return verification(vid)
 
 
 @api.get("/api/projects/{pid}/costs")
@@ -483,7 +557,7 @@ class PublicFiles(StaticFiles):
     """Rendered media is public (the demo is browsable). Uploaded sources and voice samples are not."""
 
     async def get_response(self, path, scope):
-        if "sources/" in path or path.startswith("voices/") or path.endswith((".json", ".jsonl")):
+        if "sources/" in path or path.startswith(("voices/", "verify/")) or path.endswith((".json", ".jsonl")):
             raise HTTPException(404)
         return await super().get_response(path, scope)
 

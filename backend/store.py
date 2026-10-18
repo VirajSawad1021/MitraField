@@ -364,6 +364,15 @@ def voice_delete(vid):
     shutil.rmtree(config.DATA / "voices" / vid, ignore_errors=True)
 
 
+# small keyed documents outside projects (provenance records, verification results, counters)
+def doc_get(col, did):
+    return backend().doc_get(col, did)
+
+
+def doc_put(col, did, doc):
+    backend().doc_put(col, did, doc)
+
+
 # cost ledger / spend counters (used by costs.py)
 def add_cost(pid, row):
     backend().add_cost(pid, row)

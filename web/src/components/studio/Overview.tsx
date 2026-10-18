@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { FileText, Play, StickyNote, Upload, X } from "lucide-react";
 import { Button, Card, Eyebrow, inputCls } from "@/components/ui";
 import { api, MAX_INSTRUCTIONS, type Meta, type Project } from "@/lib/api";
@@ -36,6 +37,11 @@ export function Overview({ p, meta, setP, onWatch, select }: { p: Project; meta:
             <p className="text-[13px] font-semibold">Finished video</p>
             <a href={p.render_url} download className="text-[12px] font-semibold text-body underline underline-offset-2 hover:text-ink">Download</a>
           </div>
+          {p.mark_id && (
+            <p className="border-t border-line px-4 py-2.5 text-[11px] leading-snug text-muted">
+              Carries an invisible mitrafield mark (<span className="font-mono">{p.mark_id}</span>). <Link href="/verify" className="underline underline-offset-2 hover:text-ink">Verify a video</Link>
+            </p>
+          )}
         </Card>
       )}
 

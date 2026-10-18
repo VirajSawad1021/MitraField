@@ -7,7 +7,7 @@ import time
 import shutil
 from pathlib import Path
 
-from . import config, costs, engines, gemini, jobs, log, media, store, tts
+from . import config, costs, engines, gemini, jobs, log, media, provenance, store, tts
 from .errors import friendly_error
 
 logger = log.get("pipeline")
@@ -245,12 +245,21 @@ def assemble(pid):
         write_srt(p, d / "subtitles.srt")   # shipped beside the video as a sidecar file
         slug = re.sub(r"[^a-z0-9]+", "_", p.title.lower()).strip("_")[:50] or "video"
         final = d / f"{slug}.mp4"
-        media.run(["ffmpeg", "-y", "-v", "error", "-i", d / "video.mp4", "-i", mix, "-map", "0:v", "-map", "1:a",
-                   "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", final])
+        mark = None
+        try:
+            mark = provenance.new_mark_id()
+            provenance.embed(d / "video.mp4", mix, final, mark)
+            provenance.register(p, mark, final)
+        except Exception as e:   # an export without a mark is better than no export
+            logger.warning("provenance mark skipped: %s", e, extra={"pid": p.id})
+            mark = None
+            media.run(["ffmpeg", "-y", "-v", "error", "-i", d / "video.mp4", "-i", mix, "-map", "0:v", "-map", "1:a",
+                       "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", final])
 
         def done(pp):
             pp.render_status, pp.render_path, pp.render_error = "done", str(final), None
             pp.qa = {"status": "queued", "t": time.time()}
+            pp.mark_id = provenance.mark_hex(mark) if mark is not None else None
         store.mutate(pid, done)
         jobs.enqueue("qa", pid=pid)   # every finished video gets a quality check
         return final

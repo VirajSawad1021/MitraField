@@ -28,10 +28,10 @@ STUDIO_VERTEX="${STUDIO_VERTEX:-0}"
 if [ "$STUDIO_VERTEX" = 1 ]; then
   VEO_FAST="${VEO_FAST:-veo-3.1-fast-generate-001}"; VEO_LITE="${VEO_LITE:-veo-3.1-lite-generate-001}"
   PROVIDER_ENV=",STUDIO_VERTEX=1,STUDIO_MODEL_VEO=${VEO_FAST},STUDIO_MODEL_VEO_DRAFT=${VEO_LITE},STUDIO_VERTEX_LOCATIONS=${VERTEX_LOCATIONS:-${VEO_FAST}=us-central1;${VEO_LITE}=us-central1}"
-  PROVIDER_SECRETS=()
+  PROVIDER_SECRETS=""
 else
   PROVIDER_ENV=",STUDIO_VERTEX=0${VEO_FAST:+,STUDIO_MODEL_VEO=${VEO_FAST}}${VEO_LITE:+,STUDIO_MODEL_VEO_DRAFT=${VEO_LITE}}"
-  PROVIDER_SECRETS=(--set-secrets GEMINI_API_KEY=gemini-api-key:latest)
+  PROVIDER_SECRETS=",GEMINI_API_KEY=gemini-api-key:latest"
 fi
 VOICE_SA="mitrafield-voice@${SA_DOMAIN}"
 VOICE_URL="https://mitrafield-voice-${PROJECT_NUMBER}.${REGION}.run.app"
@@ -113,7 +113,7 @@ deploy mitrafield-worker \
   --no-allow-unauthenticated --service-account "$WORKER_SA" \
   --cpu 4 --memory 8Gi --concurrency 1 --timeout 1800 --min-instances 0 --max-instances 6 \
   --set-env-vars "STUDIO_ROLE=worker,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CALLERS=${DEPLOY_SA},STUDIO_CAP_DAY_USD=${CAP_DAY_USD:-25},STUDIO_CAP_PROJECT_USD=${CAP_PROJECT_USD:-5}${PROVIDER_ENV},STUDIO_OMNI_URL=${VOICE_URL}" \
-  ${PROVIDER_SECRETS[@]+"${PROVIDER_SECRETS[@]}"}
+  --set-secrets "STUDIO_WATERMARK_KEY=watermark-key:latest${PROVIDER_SECRETS}"   # one flag: a second would replace the first
 # Cloud Tasks (as the tasks SA) and the deploy gate may invoke the worker; nobody else.
 for sa in "$TASKS_SA" "$DEPLOY_SA"; do
   gcloud run services add-iam-policy-binding mitrafield-worker --project "$PROJECT" --region "$REGION" \
@@ -124,7 +124,7 @@ echo "== gate: worker selftest (Firestore round trip + a real model call from th
 # Always act as the deploy service account (a user account cannot mint a token for a custom audience, and the
 # worker checks the caller's email, which only --include-email puts in the token).
 TOKEN="$(gcloud auth print-identity-token --impersonate-service-account="$DEPLOY_SA" --audiences="$WORKER_URL" --include-email)"
-retry bash -c "curl -fsS -H 'Authorization: Bearer $TOKEN' '$(canary_url mitrafield-worker)/internal/selftest' | tee /dev/stderr | grep -q '\"firestore\":\"ok\"'" \
+retry bash -c "curl -fsS -H 'Authorization: Bearer $TOKEN' '$(canary_url mitrafield-worker)/internal/selftest' | tee /dev/stderr | grep -q '\"firestore\":\"ok\".*\"watermark\":\"ok\"'" \
   || { echo "worker selftest FAILED; previous revision keeps serving"; exit 1; }
 promote mitrafield-worker
 

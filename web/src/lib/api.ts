@@ -11,6 +11,11 @@ export type Scene = {
 export type Source = { id: string; kind: 'note' | 'file' | 'link'; name: string; text: string }
 export type Cost = { total: number; by_kind: Record<string, number>; calls: number }
 export const MAX_INSTRUCTIONS = 2000
+export type Verification = {
+  id: string; status: 'uploading' | 'checking' | 'done' | 'error'; error?: string
+  verdict?: 'exact' | 'mark' | 'none'; frames?: number; snr?: number; trimmed?: boolean; note?: string
+  origin?: { created: number; project: string; engines: string[]; seconds: number; aspect: string }
+}
 export type CostLine = { kind: string; model: string; calls: number; usd: number }
 export type QaIssue = { kind: string; severity?: 'major' | 'minor'; detail: string }
 export type QaReport = {
@@ -21,7 +26,7 @@ export type Claim = { beat: number; sid?: string; claim: string; verdict: 'suppo
 export type FactCheck = { status: 'queued' | 'checking' | 'passed' | 'flagged' | 'error'; summary?: string; claims?: Claim[]; web?: { title: string; uri: string }[]; flagged?: string[] }
 export type Project = {
   qa?: QaReport | null; factcheck?: FactCheck | null
-  cost?: Cost; instructions?: string; quality?: 'draft' | 'final'; look?: string
+  cost?: Cost; instructions?: string; mark_id?: string | null; quality?: 'draft' | 'final'; look?: string
   pace?: number
   id: string; title: string; topic: string; audience: string; language: string; aspect: '16:9' | '9:16'
   length: 'short' | 'medium' | 'long'; voice: string; music: boolean
@@ -71,6 +76,24 @@ export const api = {
   createVoice: (fd: () => FormData) => form<VoiceProfile>('POST', '/api/voices', fd),
   deleteVoice: (id: string) => form<{ ok: boolean }>('DELETE', `/api/voices/${id}`),
   meta: () => j<Meta>(fetch('/api/meta')),
+  /** Checking a video needs no passcode. It goes up in pieces because one request body is capped at 32 MiB. */
+  verify: async (f: File, onProgress: (done: number) => void): Promise<string> => {
+    const post = async (url: string, init?: RequestInit) => {
+      const r = await fetch(url, { method: 'POST', ...init })
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `Request failed (${r.status})`)
+      return r.json()
+    }
+    const { id, chunk_bytes, max_chunks } = await post('/api/verify')
+    const n = Math.ceil(f.size / chunk_bytes)
+    if (n > max_chunks) throw new Error(`Videos are limited to ${Math.floor((max_chunks * chunk_bytes) / 1048576)} MB.`)
+    for (let i = 0; i < n; i++) {
+      await post(`/api/verify/${id}/chunk/${i}`, { body: f.slice(i * chunk_bytes, (i + 1) * chunk_bytes) })
+      onProgress((i + 1) / n)
+    }
+    await post(`/api/verify/${id}/finish`, { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chunks: n, size: f.size }) })
+    return id
+  },
+  verification: (id: string) => j<Verification>(fetch(`/api/verify/${id}`)),
   list: () => j<ProjectRow[]>(fetch('/api/projects')),
   get: (id: string) => j<Project>(fetch(`/api/projects/${id}`)),
   costs: (id: string) => j<Cost & { lines: CostLine[] }>(fetch(`/api/projects/${id}/costs`)),
