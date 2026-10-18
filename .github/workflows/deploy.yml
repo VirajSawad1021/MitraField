@@ -1,0 +1,63 @@
+name: Deploy
+
+# Every push to main: full CI, then a gated canary deploy to Cloud Run and a Firebase Hosting release.
+# Authentication is Workload Identity Federation: no service-account key is stored anywhere.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # never interrupt a deploy half way
+
+env:
+  PROJECT: mitrafield-aibc26
+  REGION: asia-southeast1
+  # Not secrets: resource names. Access is gated by the repository condition on the provider.
+  WIF_PROVIDER: projects/982071066523/locations/global/workloadIdentityPools/github/providers/github
+  DEPLOY_SA: mitrafield-deploy@mitrafield-aibc26.iam.gserviceaccount.com
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: production
+    permissions:
+      contents: read
+      id-token: write   # to exchange the GitHub OIDC token for Google credentials
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+      - name: Build, canary, gate, promote (worker then api)
+        run: ./deploy/deploy.sh
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build the static UI
+        working-directory: web
+        run: npm ci && NODE_ENV=production npx next build
+      - name: Release to Firebase Hosting
+        run: npx --yes firebase-tools@15.34.0 deploy --only hosting --project "$PROJECT" --non-interactive
+      - name: Post-release check through Hosting
+        run: |
+          for i in 1 2 3 4 5; do
+            curl -fsS "https://${PROJECT}.web.app/api/meta" | grep -q looks && exit 0
+            sleep 10
+          done
+          echo "Hosting does not reach the API" && exit 1
