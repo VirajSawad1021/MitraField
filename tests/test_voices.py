@@ -152,3 +152,26 @@ def test_unknown_or_unfinished_voice_uses_a_gemini_voice(tmp_path, monkeypatch):
     tts.synth("Hi there.", tmp_path / "a.wav", voice="../../etc/passwd", check=False)
     tts.synth("Hi there.", tmp_path / "b.wav", voice="v_nope", check=False)
     assert used == [tts.FALLBACK_VOICE, tts.FALLBACK_VOICE]
+
+
+def _ready(name, builtin=False):
+    v = store.voice_save(VoiceProfile(name=name, status="ready", builtin=builtin))
+    (config.DATA / "voices" / v.id).mkdir(parents=True, exist_ok=True)
+    (config.DATA / "voices" / v.id / "prompt.pt").write_bytes(b"x")
+    return v
+
+
+def test_default_voice_is_a_profile_id_not_a_name():
+    # projects store profile ids, so the default must be Johnny's id; a bare "Johnny" would never resolve
+    assert tts.default_voice() == tts.FALLBACK_VOICE
+    other = _ready("Asha")
+    assert tts.default_voice() == other.id
+    johnny = _ready("Johnny", builtin=True)
+    assert tts.default_voice() == johnny.id
+    assert client.get("/api/meta").json()["default_voice"] == johnny.id
+
+
+def test_default_voice_without_the_voice_service(monkeypatch):
+    _ready("Johnny", builtin=True)
+    monkeypatch.setattr(config, "OMNI_URL", "")
+    assert tts.default_voice() == tts.FALLBACK_VOICE

@@ -11,13 +11,24 @@ import subprocess
 import threading
 from pathlib import Path
 
-from . import config, gemini, log, store, voices
+from . import gemini, log, store, voices
 from .media import duration
 
 GEMINI_VOICES = ["Charon", "Kore", "Puck", "Fenrir", "Aoede", "Orus", "Leda", "Zephyr"]
 GEMINI_TEMPO = 1.1   # Gemini voices read slowly for explainers
 FALLBACK_VOICE = "Charon"
-DEFAULT_VOICE = "Johnny" if config.OMNI_URL else FALLBACK_VOICE
+DEFAULT_VOICE = FALLBACK_VOICE   # static fallback; default_voice() picks a ready cloned voice when there is one
+PREFERRED_CLONE = "Johnny"
+
+
+def default_voice():
+    """The voice new projects start with: the ready 'Johnny' profile (projects store profile ids, so the
+    name alone never resolves), else any ready built-in clone, else a Gemini voice."""
+    if voices.available():
+        ready = [v for v in store.voice_list() if voices.ready(v.id)]
+        for v in sorted(ready, key=lambda v: (v.name != PREFERRED_CLONE, not v.builtin)):
+            return v.id
+    return FALLBACK_VOICE
 
 
 def catalogue():

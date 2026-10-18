@@ -107,7 +107,7 @@ def media_url(p: Project):
 @api.get("/api/meta")
 def meta():
     from .look import LOOKS
-    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.GEMINI_VOICES, "voice_profiles": tts.catalogue()[0], "cloning": voices.available(), "default_voice": tts.DEFAULT_VOICE,
+    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.GEMINI_VOICES, "voice_profiles": tts.catalogue()[0], "cloning": voices.available(), "default_voice": tts.default_voice(),
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
                        "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}" if voices.available() else config.MODEL_TTS, "music": config.MODEL_MUSIC}}
 
@@ -182,7 +182,7 @@ class NewProject(BaseModel):
     language: str = "English"
     aspect: str = "16:9"
     length: str = "medium"
-    voice: str = tts.DEFAULT_VOICE
+    voice: str = ""   # empty = the deployment's default voice
     look: str = "cinematic"
     notes: str = ""
 
@@ -190,7 +190,7 @@ class NewProject(BaseModel):
 @api.post("/api/projects")
 def create(body: NewProject):
     p = Project(title=body.topic[:60] or "Untitled", topic=body.topic, audience=body.audience, language=body.language,
-                aspect=body.aspect, length=body.length, voice=body.voice, look=body.look)
+                aspect=body.aspect, length=body.length, voice=body.voice or tts.default_voice(), look=body.look)
     if body.notes.strip():
         p.sources.append(Source(kind="note", name="Notes", text=body.notes))
     store.save(p)
