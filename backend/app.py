@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import cast, config, costs, engines, jobs, log, pipeline, qa, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
+from . import cast, config, costs, engines, factcheck, jobs, log, pipeline, qa, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
 from .models import CastItem, Project, Scene, Source
 
 log.setup()
@@ -390,6 +390,33 @@ def run_qa(pid: str):
         raise HTTPException(400, "Render the video first.")
     store.mutate(pid, lambda pp: setattr(pp, "qa", {"status": "queued"}))
     jobs.enqueue("qa", pid=pid)
+    return media_url(get(pid))
+
+
+@api.post("/api/projects/{pid}/factcheck")
+def run_factcheck(pid: str):
+    if not get(pid).scenes:
+        raise HTTPException(400, "Write the storyboard first.")
+    store.mutate(pid, lambda pp: setattr(pp, "factcheck", {"status": "queued"}))
+    jobs.enqueue("factcheck", pid=pid)
+    return media_url(get(pid))
+
+
+@api.post("/api/projects/{pid}/factcheck/{index}/apply")
+def apply_correction(pid: str, index: int):
+    """The director rewrites the beat behind a flagged claim using the evidence; the beat re-renders."""
+    p = get(pid)
+    check_budget(pid)
+    claims = (p.factcheck or {}).get("claims") or []
+    if not 0 <= index < len(claims) or claims[index]["verdict"] not in factcheck.FLAG:
+        raise HTTPException(400, "Nothing to correct for this claim.")
+    c = claims[index]
+
+    def mark(pp):
+        pp.factcheck["claims"][index]["applied"] = True
+        store.scene(pp, c["sid"]).status = "queued"
+    store.mutate(pid, mark)
+    jobs.enqueue("rewrite", pid=pid, sid=c["sid"], instruction=factcheck.correction_instruction(c))
     return media_url(get(pid))
 
 

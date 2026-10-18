@@ -85,5 +85,6 @@ class Project(BaseModel):
     render_path: str | None = None
     render_error: str | None = None
     qa: dict | None = None   # quality report of the last render, see backend/qa.py
+    factcheck: dict | None = None   # claims checked against sources and Google Search, see backend/factcheck.py
     created: float = 0
     updated: float = 0
