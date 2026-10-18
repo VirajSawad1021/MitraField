@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, CopyPlus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { ChevronDown, CopyPlus, RefreshCw, Send, Trash2, X, Wrench } from "lucide-react";
 import { Badge, Button, Card, Eyebrow, inputCls } from "@/components/ui";
 import { api, type Meta, type Project, type Scene } from "@/lib/api";
 import { EngineTile } from "@/components/EngineChip";
@@ -28,6 +28,7 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
   }
 
   const busy = SCENE_BUSY.includes(s.status);
+  const qaIssues = (!p.qa?.stale && p.qa?.beats?.[s.id]?.issues) || [];
   const dirty = narr !== s.narration || brief !== s.brief;
   const idx = p.scenes.findIndex((x) => x.id === s.id);
   const st = engineStyle(s.engine);
@@ -63,6 +64,22 @@ export function Inspector({ p, s, meta, setP, close }: { p: Project; s: Scene; m
         </div>
         {s.error && (
           <p className={`border-t border-line px-4 py-2.5 text-[12px] ${s.status === "error" ? "bg-bad-bg text-bad" : "bg-warn-bg text-warn"}`}>{s.error}</p>
+        )}
+        {qaIssues.length > 0 && (
+          <div className="border-t border-line bg-warn-bg px-4 py-3">
+            <p className="text-[12px] font-semibold text-warn">Quality check</p>
+            <ul className="mt-1 space-y-1">
+              {qaIssues.map((x, k) => (
+                <li key={k} className="text-[12px] leading-snug text-warn"><span className="font-semibold">{x.severity === "minor" ? "Minor" : "Major"}:</span> {x.detail}</li>
+              ))}
+            </ul>
+            {p.qa?.flagged?.includes(s.id) && (
+              <button onClick={() => api.fixScene(p.id, s.id).then(setP)} disabled={busy}
+                className="mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3.5 text-[12px] font-semibold text-white hover:bg-ink-soft disabled:bg-[#b9b6ae]">
+                <Wrench className="h-3.5 w-3.5" />Fix this beat
+              </button>
+            )}
+          </div>
         )}
       </Card>
 

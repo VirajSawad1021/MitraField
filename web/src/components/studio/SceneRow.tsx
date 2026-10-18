@@ -8,8 +8,8 @@ import { EngineChip } from "@/components/EngineChip";
 import { engineStyle } from "@/lib/engines";
 import { SCENE_BUSY } from "@/lib/status";
 
-export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag, cast = [] }: {
-  s: Scene; i: number; aspect: string; on: boolean; label?: string; cast?: CastItem[];
+export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag, cast = [], flagged = false }: {
+  s: Scene; i: number; aspect: string; on: boolean; label?: string; cast?: CastItem[]; flagged?: boolean;
   onClick: () => void; onRender: () => void; drag: React.HTMLAttributes<HTMLDivElement> & { draggable: boolean };
 }) {
   const v = useRef<HTMLVideoElement>(null);
@@ -43,6 +43,7 @@ export function SceneRow({ s, i, aspect, on, label, onClick, onRender, drag, cas
           {s.status === "error" && <Badge tone="bad"><AlertTriangle className="h-3 w-3" />error</Badge>}
           {s.error && s.status === "ready" && <Badge tone="warn" title={s.error}>fallback used</Badge>}
           {busy && <Badge tone="warn">{s.status}</Badge>}
+          {flagged && !busy && <Badge tone="warn" title="The quality check flagged this beat">QA flag</Badge>}
           <GripVertical className="ml-auto h-4 w-4 text-line-strong opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
         <p className="mt-2 line-clamp-2 text-[14px] leading-snug text-ink">{s.narration}</p>

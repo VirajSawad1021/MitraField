@@ -7,8 +7,9 @@ import { api, MAX_INSTRUCTIONS, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { LookPicker } from "@/components/LookPicker";
 import { CostCard } from "./CostCard";
+import { QaCard } from "./QaCard";
 
-export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; setP: (p: Project) => void; onWatch: () => void }) {
+export function Overview({ p, meta, setP, onWatch, select }: { p: Project; meta: Meta; setP: (p: Project) => void; onWatch: () => void; select: (sid: string) => void }) {
   const [note, setNote] = useState("");
   const [dir, setDir] = useState(p.instructions ?? "");
   const [saving, setSaving] = useState(false);
@@ -36,6 +37,8 @@ export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; s
           </div>
         </Card>
       )}
+
+      <QaCard p={p} setP={setP} select={select} />
 
       {meta.looks && (
         <Card className="p-4">
