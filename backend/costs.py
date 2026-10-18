@@ -1,16 +1,14 @@
 """Per-project cost ledger.
 
 Every billable call is priced from Google's published paid-tier rates and appended to
-data/projects/<id>/costs.jsonl. The project in scope is carried in a context variable;
+the store (see store.py). The project in scope is carried in a context variable;
 `bind` carries it into worker threads.
 """
 import contextvars
-import json
-import threading
 import time
 from contextlib import contextmanager
 
-from . import store
+from . import config, store
 
 # USD, Gemini API paid tier (ai.google.dev/gemini-api/docs/pricing, checked 2026-10-17).
 TOKENS = {   # per 1M tokens: (input, output incl. thinking)
@@ -19,12 +17,12 @@ TOKENS = {   # per 1M tokens: (input, output incl. thinking)
 }
 IMAGE = {"gemini-3.1-flash-image": 0.067, "gemini-3-pro-image": 0.134}   # per 1K image
 VEO_PER_SECOND = {"veo-3.1-generate-preview": 0.40, "veo-3.1-fast-generate-preview": 0.10,
-                  "veo-3.1-lite-generate-preview": 0.05}                    # 720p
+                  "veo-3.1-lite-generate-preview": 0.05,
+                  "veo-3.1-generate-001": 0.40, "veo-3.1-fast-generate-001": 0.10, "veo-3.1-lite-generate-001": 0.05}   # Vertex ids                    # 720p
 TTS_PER_SECOND = 0.000225          # gemini-3.8-flash-tts audio output
 MUSIC_PER_CLIP = 0.04              # Lyria 3 clip
 
 _project = contextvars.ContextVar("cost_project", default=None)
-_lock = threading.Lock()
 
 
 @contextmanager
@@ -53,14 +51,42 @@ def bind(fn):
     return lambda *a, **kw: parent.copy().run(fn, *a, **kw)
 
 
+class BudgetExceeded(RuntimeError):
+    """A billable call was refused because a spend cap has been reached."""
+
+
+_cache = {}
+
+
+def _spend(key, ttl=5.0):
+    """Running total for a project or a day. Cached for a few seconds: the guard runs before every
+    billable call and must not turn each one into extra database reads."""
+    hit = _cache.get(key)
+    if hit and time.time() - hit[0] < ttl:
+        return hit[1]
+    v = store.spend(key)
+    _cache[key] = (time.time(), v)
+    return v
+
+
+def guard():
+    """Raise BudgetExceeded when today's total, or the current project's total, is over its cap."""
+    day = _spend(f"d:{store._today()}")["total"]
+    if day >= config.CAP_DAY_USD:
+        raise BudgetExceeded(f"The daily spend cap (${config.CAP_DAY_USD:.2f}) has been reached. Try again tomorrow.")
+    pid = _project.get()
+    if pid and _spend(f"p:{pid}")["total"] >= config.CAP_PROJECT_USD:
+        raise BudgetExceeded(f"This project has reached its spend cap (${config.CAP_PROJECT_USD:.2f}).")
+
+
 def add(kind, usd, model="", note=""):
     pid = _project.get()
     if not pid:
         return
     row = {"t": round(time.time(), 1), "kind": kind, "model": model, "usd": round(usd, 5), "note": note}
-    with _lock:
-        with open(store.pdir(pid) / "costs.jsonl", "a") as f:
-            f.write(json.dumps(row) + "\n")
+    store.add_cost(pid, row)
+    for key in (f"p:{pid}", f"d:{store._today()}"):
+        _cache.pop(key, None)
 
 
 def tokens(model, usage, note=""):
@@ -73,15 +99,7 @@ def tokens(model, usage, note=""):
 
 
 def summary(pid):
-    f = store.pdir(pid) / "costs.jsonl"
-    by, total, n = {}, 0.0, 0
-    if f.exists():
-        for line in f.read_text().splitlines():
-            try:
-                r = json.loads(line)
-            except ValueError:
-                continue
-            by[r["kind"]] = by.get(r["kind"], 0) + r["usd"]
-            total += r["usd"]
-            n += 1
-    return {"total": round(total, 4), "by_kind": {k: round(v, 4) for k, v in sorted(by.items(), key=lambda x: -x[1])}, "calls": n}
+    r = store.spend(f"p:{pid}")
+    by = r.get("by_kind") or {}
+    return {"total": round(r.get("total", 0.0), 4), "by_kind": {k: round(v, 4) for k, v in sorted(by.items(), key=lambda x: -x[1])},
+            "calls": int(r.get("calls", 0))}

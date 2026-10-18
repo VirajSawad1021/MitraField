@@ -6,7 +6,7 @@ import { ArrowRight, FileText, Monitor, Smartphone, Upload, X } from "lucide-rea
 import { AppShell } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Eyebrow, Field, Segmented, inputCls } from "@/components/ui";
 import { api, type Meta } from "@/lib/api";
-import { voiceGroups, voiceLabel } from "@/lib/voices";
+import { CreateVoiceLink, VoiceSelect } from "@/components/VoiceSelect";
 import { LookPicker } from "@/components/LookPicker";
 
 const EXAMPLES = [
@@ -40,9 +40,9 @@ function NewVideo() {
   const [language, setLanguage] = useState("English");
   const [audience, setAudience] = useState(AUDIENCES[0]);
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [voice, setVoice] = useState("Johnny");
+  const [voice, setVoice] = useState("");
   const [look, setLook] = useState("cinematic");
-  useEffect(() => { api.meta().then(setMeta).catch(() => {}); }, []);
+  useEffect(() => { api.meta().then((m) => { setMeta(m); setVoice((v) => v || m.default_voice); }).catch(() => {}); }, []);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -52,7 +52,7 @@ function NewVideo() {
     setBusy(true);
     setErr(null);
     try {
-      const p = await api.create({ topic, notes, aspect, length, language, audience, voice, look });
+      const p = await api.create({ topic, notes, aspect, length, language, audience, ...(voice ? { voice } : {}), look });
       for (const f of files) await api.addFile(p.id, f);
       await api.storyboard(p.id);
       router.push(`/studio?p=${p.id}`);
@@ -99,12 +99,8 @@ function NewVideo() {
                 {LANGS.map((l) => <option key={l}>{l}</option>)}
               </select>
             </Field>
-            <Field label="Narrator" hint="Channel voices are your own clones; Gemini voices cover more languages.">
-              <select value={voice} onChange={(e) => setVoice(e.target.value)} className={inputCls}>
-                {voiceGroups(meta?.voices ?? ["Johnny"], meta?.channel_voices ?? ["Johnny"]).map((g) => (
-                  <optgroup key={g.label} label={g.label}>{g.items.map((v) => <option key={v} value={v}>{voiceLabel(v)}</option>)}</optgroup>
-                ))}
-              </select>
+            <Field label="Narrator" hint={<>Pick a voice, or <CreateVoiceLink meta={meta} /> from a short recording. Gemini voices cover more languages.</>}>
+              <VoiceSelect meta={meta} value={voice} onChange={setVoice} className={inputCls} />
             </Field>
             <Field label="Audience" hint="The director adjusts vocabulary, pace and examples.">
               <input list="aud" value={audience} onChange={(e) => setAudience(e.target.value)} className={inputCls} />

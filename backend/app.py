@@ -1,81 +1,92 @@
-"""HTTP API for the workspace UI."""
+"""HTTP API for the workspace UI.
+
+STUDIO_ROLE decides what this process serves: `api` (public routes, never renders), `worker`
+(private /internal/tasks only, renders) or `all` (local development, both).
+"""
+import hmac
 import os
-import shutil
+import re
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import cast, config, costs, director, engines, jobs, pipeline, store, tts
+from . import cast, config, costs, engines, jobs, log, pipeline, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
 from .models import CastItem, Project, Scene, Source
 
-app = FastAPI(title="MitraField")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+log.setup()
+logger = log.get("api")
+
+@asynccontextmanager
+async def lifespan(_app):
+    recover_after_restart()
+    yield
+
+
+app = FastAPI(title="MitraField", docs_url=None, redoc_url=None, lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=[o for o in os.environ.get("STUDIO_CORS", "*").split(",") if o],
+                   allow_methods=["*"], allow_headers=["*"])
 
 PASSCODE = os.environ.get("STUDIO_PASSCODE", "")
+PID = re.compile(r"^[0-9a-f]{10}$")
 
 
 @app.middleware("http")
-async def guard_writes(request, call_next):
+async def guard_writes(request: Request, call_next):
     """On a public deployment, anyone can browse; generating or editing needs the passcode
-    (every write can spend API credits)."""
+    (every write can spend money)."""
     if PASSCODE and request.url.path.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
-        if request.headers.get("x-studio-pass") != PASSCODE:
-            from fastapi.responses import JSONResponse
+        if not hmac.compare_digest(request.headers.get("x-studio-pass", "").encode(), PASSCODE.encode()):
             return JSONResponse({"detail": "passcode required"}, status_code=401)
     return await call_next(request)
 
 
-@app.on_event("startup")
-def recover_interrupted():
-    """Jobs run inside this process, so a restart (deploy, crash, scale event) loses them. Anything left
-    'queued', 'rendering', 'directing' or 'generating' is reset so the UI never shows a stuck spinner.
-    Nothing is re-run automatically: that could spend credits nobody asked for."""
-    busy_scene, busy_project = {"queued", "rendering"}, {"directing", "rendering scenes", "assembling"}
-    for row in store.list_all():
-        pid = row.get("id")
-        if not pid:
-            continue
-        stuck = (row.get("render_status") in busy_project or any(s.get("status") in busy_scene for s in row.get("scenes", []))
-                 or any(c.get("status") == "generating" for c in row.get("cast", [])))
-        if not stuck:
-            continue
-
-        def reset(p):
-            for s in p.scenes:
-                if s.status in busy_scene:
-                    s.status = "ready" if s.clip and Path(s.clip).exists() and s.render_hash else "draft"
-            for c in p.cast:
-                if c.status == "generating":
-                    c.status = "pending"
-            if p.render_status in busy_project:
-                was = p.render_status
-                p.render_status = "error"
-                p.render_error = ("The server restarted while this project was "
-                                  f"{'being directed' if was == 'directing' else 'rendering'}. Press "
-                                  f"{'Re-direct' if was == 'directing' else 'Render video'} to continue; finished beats are kept.")
-        store.mutate(pid, reset)
-        print(f"[recover] reset interrupted project {pid}", flush=True)
+def valid_pid(request: Request):
+    """Every route that names a project: ids are 10 hex chars, so a path can never escape the data dir."""
+    pid = request.path_params.get("pid")
+    if pid is not None and not PID.match(pid):
+        raise HTTPException(404, "project not found")
 
 
-def friendly_error(e):
-    s = str(e)
-    if "spending cap" in s or "spend cap" in s:
-        return "The Gemini API key has reached its monthly spending cap. Raise it at ai.studio/spend, then try again."
-    if "429" in s or "RESOURCE_EXHAUSTED" in s:
-        return "Gemini is rate-limiting this key right now. Wait a minute and try again."
-    return s[:400]
+api = APIRouter(dependencies=[Depends(valid_pid)])
+
+
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    return {"ok": True, "role": config.ROLE}
+
+
+@app.get("/readyz", include_in_schema=False)
+def readyz():
+    """Ready only when the project store answers. Cloud Run's startup probe and the deploy smoke test use this."""
+    try:
+        store.list_all()
+    except Exception as e:
+        logger.exception("not ready")
+        return JSONResponse({"ok": False, "error": repr(e)[:200]}, status_code=503)
+    return {"ok": True, "store": config.STORE, "queue": config.QUEUE, "vertex": config.VERTEX}
 
 
 def get(pid):
     try:
-        return store.load(pid)
+        p = store.load(pid)
     except FileNotFoundError:
         raise HTTPException(404, "project not found")
+    return p
+
+
+def check_budget(pid):
+    """Refuse up front (HTTP 429) instead of queueing work that would only fail."""
+    with costs.track(pid):
+        try:
+            costs.guard()
+        except costs.BudgetExceeded as e:
+            raise HTTPException(429, str(e))
 
 
 def media_url(p: Project):
@@ -93,12 +104,12 @@ def media_url(p: Project):
     return d
 
 
-@app.get("/api/meta")
+@api.get("/api/meta")
 def meta():
     from .look import LOOKS
-    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
+    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.GEMINI_VOICES, "voice_profiles": tts.catalogue()[0], "cloning": voices.available(), "default_voice": tts.default_voice(),
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
-                       "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}", "music": config.MODEL_MUSIC}}
+                       "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}" if voices.available() else config.MODEL_TTS, "music": config.MODEL_MUSIC}}
 
 
 def _cover(p):
@@ -112,7 +123,7 @@ def _cover(p):
     return f"/files/{Path(best['thumb']).relative_to(root)}"
 
 
-@app.get("/api/projects")
+@api.get("/api/projects")
 def projects():
     return [{k: p.get(k) for k in ("id", "title", "topic", "aspect", "language", "updated", "render_status")}
             | {"scenes": len(p.get("scenes", [])), "cover": _cover(p),
@@ -121,33 +132,80 @@ def projects():
             for p in store.list_all()]
 
 
+class VoiceOut(BaseModel):
+    id: str
+    name: str
+    language: str
+    status: str
+    error: str | None
+    builtin: bool
+
+
+def voice_out(v):
+    return VoiceOut(**v.model_dump(include=set(VoiceOut.model_fields)))
+
+
+@api.get("/api/voices")
+def list_voices():
+    return [voice_out(v) for v in store.voice_list()]
+
+
+@api.post("/api/voices")
+async def create_voice(name: str = Form(...), file: UploadFile = File(...), reference_text: str = Form(""),
+                       language: str = Form("English"), consent: bool = Form(False)):
+    """Clone a narrator from a short sample. Needs the passcode like every write, and an explicit statement
+    that the voice is the speaker's own or used with permission."""
+    audio = await file.read(voices.MAX_UPLOAD + 1)
+    try:
+        return voice_out(voices.create(name, audio, reference_text, language, consent))
+    except voices.VoiceError as e:
+        raise HTTPException(400, str(e))
+
+
+@api.delete("/api/voices/{vid}")
+def delete_voice(vid: str):
+    if not voices.ID.match(vid):
+        raise HTTPException(404, "voice not found")
+    try:
+        v = store.voice_get(vid)
+    except FileNotFoundError:
+        raise HTTPException(404, "voice not found")
+    if v.builtin:
+        raise HTTPException(403, "The channel voices cannot be deleted.")
+    store.voice_delete(vid)
+    return {"ok": True}
+
+
 class NewProject(BaseModel):
     topic: str
     audience: str = "curious general audience"
     language: str = "English"
     aspect: str = "16:9"
     length: str = "medium"
-    voice: str = tts.DEFAULT_VOICE
+    voice: str = ""   # empty = the deployment's default voice
     look: str = "cinematic"
     notes: str = ""
 
 
-@app.post("/api/projects")
+@api.post("/api/projects")
 def create(body: NewProject):
     p = Project(title=body.topic[:60] or "Untitled", topic=body.topic, audience=body.audience, language=body.language,
-                aspect=body.aspect, length=body.length, voice=body.voice, look=body.look)
+                aspect=body.aspect, length=body.length, voice=body.voice or tts.default_voice(), look=body.look)
     if body.notes.strip():
         p.sources.append(Source(kind="note", name="Notes", text=body.notes))
     store.save(p)
     return media_url(p)
 
 
-@app.get("/api/projects/{pid}")
+@api.get("/api/projects/{pid}")
 def read(pid: str):
-    return media_url(get(pid))
+    p = get(pid)
+    if pipeline.reap_stale(pid):   # a job that died leaves its beat spinning: fail it when someone looks
+        p = get(pid)
+    return media_url(p)
 
 
-@app.patch("/api/projects/{pid}")
+@api.patch("/api/projects/{pid}")
 def update(pid: str, body: dict):
     allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace", "quality", "look"}
     old = get(pid)
@@ -163,18 +221,18 @@ def update(pid: str, body: dict):
                     c.description = f"{lk['label']}: {lk['image']}"
                 c.image, c.status = None, "pending"
         store.mutate(pid, restyle)
-        jobs.submit(f"cast {pid}", cast.ensure, pid)
+        jobs.enqueue("cast_ensure", pid=pid)
     return media_url(get(pid))
 
 
-@app.delete("/api/projects/{pid}")
+@api.delete("/api/projects/{pid}")
 def delete(pid: str):
     get(pid)
-    shutil.rmtree(config.DATA / pid)
+    store.delete(pid)
     return {"ok": True}
 
 
-@app.post("/api/projects/{pid}/sources")
+@api.post("/api/projects/{pid}/sources")
 async def add_source(pid: str, file: UploadFile | None = File(None), text: str = "", name: str = ""):
     get(pid)
     if file:
@@ -188,29 +246,16 @@ async def add_source(pid: str, file: UploadFile | None = File(None), text: str =
     return media_url(store.mutate(pid, lambda p: p.sources.append(src)))
 
 
-@app.delete("/api/projects/{pid}/sources/{sid}")
+@api.delete("/api/projects/{pid}/sources/{sid}")
 def del_source(pid: str, sid: str):
     return media_url(store.mutate(pid, lambda p: setattr(p, "sources", [s for s in p.sources if s.id != sid])))
 
 
-@costs.tracked
-def _storyboard(pid):
-    store.mutate(pid, lambda p: setattr(p, "render_status", "directing"))
-    try:
-        p = director.storyboard(store.load(pid))
-        p.render_status = "storyboard"
-        store.save(p)
-        jobs.submit(f"cast {pid}", cast.ensure, pid)   # reference images are ready before the first render
-    except Exception as e:
-        msg = friendly_error(e)
-        store.mutate(pid, lambda p: (setattr(p, "render_status", "error"), setattr(p, "render_error", msg)))
-        raise
-
-
-@app.post("/api/projects/{pid}/storyboard")
+@api.post("/api/projects/{pid}/storyboard")
 def storyboard(pid: str):
     get(pid)
-    jobs.submit(f"storyboard {pid}", _storyboard, pid)
+    check_budget(pid)
+    jobs.enqueue("storyboard", pid=pid)
     return media_url(store.mutate(pid, lambda p: setattr(p, "render_status", "directing")))
 
 
@@ -230,15 +275,16 @@ class CastEdit(BaseModel):
     description: str | None = None
 
 
-@app.post("/api/projects/{pid}/cast")
+@api.post("/api/projects/{pid}/cast")
 def add_cast(pid: str, body: CastEdit):
     item = CastItem(kind=body.kind or "character", name=body.name or "New", description=body.description or "")
+    check_budget(pid)
     store.mutate(pid, lambda p: p.cast.append(item))
-    jobs.submit(f"cast {item.id}", cast.generate, pid, item.id)
+    jobs.enqueue("cast_generate", pid=pid, cid=item.id)
     return media_url(store.mutate(pid, lambda p: cast._set(p, item.id, status="generating")))
 
 
-@app.patch("/api/projects/{pid}/cast/{cid}")
+@api.patch("/api/projects/{pid}/cast/{cid}")
 def edit_cast(pid: str, cid: str, body: CastEdit):
     changes = body.model_dump(exclude_none=True)
     p = get(pid)
@@ -248,23 +294,26 @@ def edit_cast(pid: str, cid: str, body: CastEdit):
     redraw = "description" in changes and changes["description"] != old.description
     store.mutate(pid, lambda pp: cast._set(pp, cid, **changes))
     if redraw:
-        jobs.submit(f"cast {cid}", cast.generate, pid, cid)
+        check_budget(pid)
+        jobs.enqueue("cast_generate", pid=pid, cid=cid)
     return media_url(get(pid))
 
 
-@app.post("/api/projects/{pid}/cast/{cid}/generate")
+@api.post("/api/projects/{pid}/cast/{cid}/generate")
 def regen_cast(pid: str, cid: str):
-    jobs.submit(f"cast {cid}", cast.generate, pid, cid)
+    check_budget(pid)
+    jobs.enqueue("cast_generate", pid=pid, cid=cid)
     return media_url(store.mutate(pid, lambda p: cast._set(p, cid, status="generating")))
 
 
-@app.post("/api/projects/{pid}/cast/generate")
+@api.post("/api/projects/{pid}/cast/generate")
 def gen_all_cast(pid: str):
-    jobs.submit(f"cast all {pid}", cast.ensure, pid)
+    check_budget(pid)
+    jobs.enqueue("cast_ensure", pid=pid)
     return media_url(get(pid))
 
 
-@app.delete("/api/projects/{pid}/cast/{cid}")
+@api.delete("/api/projects/{pid}/cast/{cid}")
 def del_cast(pid: str, cid: str):
     def f(p):
         p.cast = [c for c in p.cast if c.id != cid]
@@ -273,7 +322,7 @@ def del_cast(pid: str, cid: str):
     return media_url(store.mutate(pid, f))
 
 
-@app.patch("/api/projects/{pid}/scenes/{sid}")
+@api.patch("/api/projects/{pid}/scenes/{sid}")
 def edit_scene(pid: str, sid: str, body: SceneEdit):
     def f(p):
         s = store.scene(p, sid)
@@ -286,7 +335,7 @@ def edit_scene(pid: str, sid: str, body: SceneEdit):
     return media_url(store.mutate(pid, f))
 
 
-@app.post("/api/projects/{pid}/scenes")
+@api.post("/api/projects/{pid}/scenes")
 def add_scene(pid: str, body: dict):
     after = body.get("after")
     sc = Scene(narration=body.get("narration", "New scene."), engine=body.get("engine", "title"), brief=body.get("brief", ""))
@@ -297,12 +346,12 @@ def add_scene(pid: str, body: dict):
     return media_url(store.mutate(pid, f))
 
 
-@app.delete("/api/projects/{pid}/scenes/{sid}")
+@api.delete("/api/projects/{pid}/scenes/{sid}")
 def del_scene(pid: str, sid: str):
     return media_url(store.mutate(pid, lambda p: setattr(p, "scenes", [s for s in p.scenes if s.id != sid])))
 
 
-@app.post("/api/projects/{pid}/order")
+@api.post("/api/projects/{pid}/order")
 def reorder(pid: str, body: dict):
     ids = body["ids"]
 
@@ -312,87 +361,90 @@ def reorder(pid: str, body: dict):
     return media_url(store.mutate(pid, f))
 
 
-@costs.tracked
-def _rewrite(pid, sid, instruction):
-    p = store.load(pid)
-    s = director.rewrite_scene(p, store.scene(p, sid), instruction)
-    s.status = "draft"
-    store.mutate(pid, lambda pp: pp.scenes.__setitem__([x.id for x in pp.scenes].index(sid), s))
-    pipeline.render_scene(pid, sid)
-
-
-@app.post("/api/projects/{pid}/scenes/{sid}/rewrite")
+@api.post("/api/projects/{pid}/scenes/{sid}/rewrite")
 def rewrite(pid: str, sid: str, body: dict):
-    jobs.submit(f"rewrite {sid}", _rewrite, pid, sid, body.get("instruction", ""))
+    get(pid)
+    check_budget(pid)
     pipeline.set_scene(pid, sid, status="queued")
+    jobs.enqueue("rewrite", pid=pid, sid=sid, instruction=body.get("instruction", ""))
     return media_url(get(pid))
 
 
-@app.post("/api/projects/{pid}/scenes/{sid}/render")
+@api.post("/api/projects/{pid}/scenes/{sid}/render")
 def render_one(pid: str, sid: str, body: dict | None = None):
     force = bool((body or {}).get("force"))
+    get(pid)
+    check_budget(pid)
     if (body or {}).get("replan"):
         pipeline.set_scene(pid, sid, params={})
     pipeline.set_scene(pid, sid, status="queued")
-    jobs.submit(f"render {sid}", pipeline.render_scene, pid, sid, force)
+    jobs.enqueue("render_scene", pid=pid, sid=sid, force=force)
     return media_url(get(pid))
 
 
-@app.post("/api/projects/{pid}/render")
+@api.post("/api/projects/{pid}/render")
 def render(pid: str):
     if not get(pid).scenes:
         raise HTTPException(400, "There is no storyboard to render yet.")
-    jobs.submit(f"render all {pid}", pipeline.render_all, pid)
-    return media_url(store.mutate(pid, lambda p: setattr(p, "render_status", "rendering scenes")))
+    check_budget(pid)
+    store.mutate(pid, lambda p: setattr(p, "render_status", "rendering scenes"))
+    jobs.enqueue("render_all", pid=pid)
+    return media_url(get(pid))
 
 
-@app.post("/api/projects/{pid}/assemble")
+@api.post("/api/projects/{pid}/assemble")
 def assemble(pid: str):
-    jobs.submit(f"assemble {pid}", pipeline.assemble, pid)
-    return media_url(store.mutate(pid, lambda p: setattr(p, "render_status", "assembling")))
+    get(pid)
+    check_budget(pid)
+    store.mutate(pid, lambda p: setattr(p, "render_status", "assembling"))
+    jobs.enqueue("assemble", pid=pid)
+    return media_url(get(pid))
 
 
-# engines that put words on screen: re-planned and re-rendered in the new language
-TEXT_ENGINES = {"title", "manim", "globe", "chart", "timeline", "flow", "scene"}
-
-
-@costs.tracked
-def _translate(pid, language):
-    src = store.load(pid)
-    lines = director.translate(src, language)
-    p = src.model_copy(deep=True)
-    from .models import new_id
-    p.id, p.title, p.language = new_id(), f"{src.title} ({language})", language
-    p.render_status, p.render_path = "rendering scenes", None
-    old_ids = [s.id for s in p.scenes]
-    src_clips = {x.id: x.clip for x in src.scenes}
-    for s, line in zip(p.scenes, lines):
-        src_clip = src_clips.get(s.id)
-        old = config.DATA / src.id / "scenes" / s.id
-        new = new_id()
-        if old.exists() and s.engine not in TEXT_ENGINES:   # reuse generated stills / Veo shots
-            shutil.copytree(old, config.DATA / p.id / "scenes" / new, ignore=shutil.ignore_patterns("clip_*", "voice_*", "thumb_*"))
-        s.id, s.narration, s.audio, s.clip, s.thumb, s.status, s.narration_hash = new, line, None, None, None, "queued", None
-        if s.engine in TEXT_ENGINES:   # on-screen text must be re-planned in the new language
-            s.params = {}
-        elif src_clip and Path(src_clip).exists():   # pictures have no words: reuse the finished shot as is
-            s.params = {**s.params, "_reuse_clip": src_clip}
-    store.save(p)
-    pipeline.render_all(p.id)
-
-
-@app.post("/api/projects/{pid}/translate")
+@api.post("/api/projects/{pid}/translate")
 def translate(pid: str, body: dict):
-    jobs.submit(f"translate {pid}", _translate, pid, body["language"])
+    get(pid)
+    check_budget(pid)
+    jobs.enqueue("translate", pid=pid, language=body["language"])
     return {"ok": True}
 
 
-@app.get("/api/jobs")
+@api.get("/api/jobs")
 def job_list():
     return jobs.recent()
 
 
-app.mount("/files", StaticFiles(directory=str(config.DATA)), name="files")
+class PublicFiles(StaticFiles):
+    """Rendered media is public (the demo is browsable). Uploaded sources and voice samples are not."""
+
+    async def get_response(self, path, scope):
+        if "sources/" in path or path.startswith("voices/") or path.endswith((".json", ".jsonl")):
+            raise HTTPException(404)
+        return await super().get_response(path, scope)
+
+
+@app.exception_handler(FileNotFoundError)
+async def _missing(request, exc):
+    return JSONResponse({"detail": "not found"}, status_code=404)
+
+
+if config.ROLE in ("all", "api"):
+    app.include_router(api)
+    app.mount("/files", PublicFiles(directory=str(config.DATA)), name="files")
+if config.ROLE == "worker" or (config.ROLE == "all" and config.QUEUE == "cloudtasks"):
+    from .worker import router as worker_router
+    app.include_router(worker_router)
 dist = config.ROOT / "web" / "out"
-if dist.exists():
+if dist.exists() and config.ROLE in ("all", "api"):
     app.mount("/", StaticFiles(directory=str(dist), html=True), name="ui")
+
+
+def recover_after_restart():
+    """With the local queue, jobs die with the process, so anything left busy is failed at once. With
+    Cloud Tasks nothing is lost on restart (the queue redelivers), so this only fails jobs older than
+    a job can run, and only when a person opens the project (see read)."""
+    if config.QUEUE != "local":
+        return
+    for row in store.list_all():
+        if row.get("id") and pipeline.reap_stale(row["id"], min_age=0):
+            logger.info("reset interrupted project", extra={"pid": row["id"]})

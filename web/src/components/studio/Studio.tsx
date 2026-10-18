@@ -7,7 +7,7 @@ import { AgentWorking, Badge, Button, ErrorNote, Segmented, Skeleton, fmtTime } 
 import { api, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { PROJECT_BUSY, SCENE_BUSY, statusTone } from "@/lib/status";
-import { voiceGroups, voiceLabel } from "@/lib/voices";
+import { VoiceSelect } from "@/components/VoiceSelect";
 import { CastStrip } from "./CastStrip";
 import { Inspector } from "./Inspector";
 import { Overview } from "./Overview";
@@ -77,12 +77,8 @@ export function Studio({ id }: { id: string }) {
           {!!p.cost?.total && <Badge tone="info" title={`${p.cost.calls} billable calls`}>${p.cost.total.toFixed(2)} spent</Badge>}
           <Segmented size="sm" value={p.quality ?? "final"} onChange={(v) => run(() => api.patch(p.id, { quality: v }))}
             options={[{ value: "draft", label: "Draft" }, { value: "final", label: "Final" }]} />
-          <select value={p.voice} onChange={(e) => run(() => api.patch(p.id, { voice: e.target.value }))}
-            className="h-10 rounded-full border border-line-strong bg-white px-3.5 text-[13px] font-medium focus:outline-none" title="Narrator voice">
-            {voiceGroups(meta.voices, meta.channel_voices).map((g) => (
-              <optgroup key={g.label} label={g.label}>{g.items.map((v) => <option key={v} value={v}>{voiceLabel(v)}</option>)}</optgroup>
-            ))}
-          </select>
+          <VoiceSelect meta={meta} value={p.voice} onChange={(voice) => run(() => api.patch(p.id, { voice }))} title="Narrator voice"
+            className="h-10 rounded-full border border-line-strong bg-white px-3.5 text-[13px] font-medium focus:outline-none" />
           <TranslateMenu disabled={!p.scenes.length} exclude={p.language} onPick={async (l) => {
             await api.translate(p.id, l);
             setNote(`A ${l} version is being made. It reuses these visuals and appears in Projects when it is done.`);

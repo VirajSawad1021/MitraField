@@ -9,43 +9,60 @@ from pathlib import Path
 from google import genai
 from google.genai import types
 
-from . import config, costs
+from . import config, costs, log
 
+logger = log.get("gemini")
 
-_client = None
+_clients = {}
 _client_lock = threading.Lock()
 
 
-def client():
-    """One shared client. Created under a lock: a second client built by a racing thread
-    would be garbage-collected (and closed) mid-request."""
-    global _client
+def client(model=None):
+    """One shared client per Vertex location (or the single API-key client). Created under a lock:
+    a second client built by a racing thread would be garbage-collected (and closed) mid-request.
+
+    On Cloud Run, Vertex AI authenticates as the service account, so no API key exists in the
+    container. Some preview models are served from a different location than the default
+    (STUDIO_VERTEX_LOCATIONS="veo-3.1-fast-generate-preview=us-central1;lyria-3-clip-preview=us-central1")."""
+    loc = config.VERTEX_LOCATION_OVERRIDES.get(model, config.VERTEX_LOCATION) if config.VERTEX else None
     with _client_lock:
-        if _client is None:
+        if loc not in _clients:
             if config.VERTEX:
-                _client = genai.Client(vertexai=True, project=os.environ["GOOGLE_CLOUD_PROJECT"],
-                                       location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"))
+                _clients[loc] = genai.Client(vertexai=True, project=config.GCP_PROJECT, location=loc)
             else:
-                _client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-        return _client
+                _clients[loc] = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        return _clients[loc]
 
 
-def _retry(fn, tries=3):
-    for i in range(tries):
+def _is_rate_limit(e):
+    return "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)
+
+
+def _retry(fn, tries=3, rate_tries=6):
+    """Retry transient 5xx quickly, and rate limits (per-minute quotas) patiently: 10, 20, 40, 60, 60 s.
+    A refused spend cap is never retried."""
+    costs.guard()
+    i = 0
+    while True:
         try:
             return fn()
-        except Exception as e:  # rate limits / transient 5xx
-            if i == tries - 1:
+        except costs.BudgetExceeded:
+            raise
+        except Exception as e:
+            i += 1
+            limit = rate_tries if _is_rate_limit(e) else tries
+            if i >= limit:
                 raise
-            print(f"[gemini] retry {i + 1}: {e}", flush=True)
-            time.sleep(4 * (i + 1))
+            wait = min(60, 10 * 2 ** (i - 1)) if _is_rate_limit(e) else 4 * i
+            logger.warning("retry %d/%d in %ds: %s", i, limit - 1, wait, str(e)[:160], extra={"attempt": i})
+            time.sleep(wait)
 
 
 def text(prompt, model=None, system=None, parts=None, temperature=None):
     contents = [prompt] + list(parts or [])
     cfg = types.GenerateContentConfig(system_instruction=system, temperature=temperature)
     m = model or config.MODEL_FAST
-    r = _retry(lambda: client().models.generate_content(model=m, contents=contents, config=cfg))
+    r = _retry(lambda: client(m).models.generate_content(model=m, contents=contents, config=cfg))
     costs.tokens(m, r.usage_metadata)
     return r.text or ""
 
@@ -56,7 +73,7 @@ def json_call(prompt, schema=None, model=None, system=None, parts=None, temperat
     cfg = types.GenerateContentConfig(system_instruction=system, temperature=temperature,
                                       response_mime_type="application/json", response_schema=schema)
     m = model or config.MODEL_FAST
-    r = _retry(lambda: client().models.generate_content(model=m, contents=contents, config=cfg))
+    r = _retry(lambda: client(m).models.generate_content(model=m, contents=contents, config=cfg))
     costs.tokens(m, r.usage_metadata)
     return json.loads(r.text)
 
@@ -73,7 +90,7 @@ def image(prompt, out, aspect="16:9", refs=(), model=None):
                                       image_config=types.ImageConfig(aspect_ratio=aspect))
 
     def go():
-        r = client().models.generate_content(model=model or config.MODEL_IMAGE, contents=parts + [prompt], config=cfg)
+        r = client(model or config.MODEL_IMAGE).models.generate_content(model=model or config.MODEL_IMAGE, contents=parts + [prompt], config=cfg)
         for p in r.candidates[0].content.parts:
             if p.inline_data and p.inline_data.data:
                 return p.inline_data.data
@@ -102,7 +119,7 @@ def tts(text_in, out_wav, voice="Charon", model=None):
             prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice))))
 
     def go():
-        r = client().models.generate_content(model=model or config.MODEL_TTS, contents=prompt, config=cfg)
+        r = client(model or config.MODEL_TTS).models.generate_content(model=model or config.MODEL_TTS, contents=prompt, config=cfg)
         return r.candidates[0].content.parts[0].inline_data.data
 
     pcm = _retry(go)
@@ -120,12 +137,12 @@ def video(prompt, out, aspect="16:9", seconds=8, image_path=None, model=None):
     kw = {}
     if image_path:
         kw["image"] = types.Image(image_bytes=Path(image_path).read_bytes(), mime_type="image/png")
-    op = _retry(lambda: client().models.generate_videos(
+    op = _retry(lambda: client(model or config.MODEL_VEO).models.generate_videos(
         model=model or config.MODEL_VEO, prompt=prompt,
         config=types.GenerateVideosConfig(aspect_ratio=aspect, duration_seconds=seconds, number_of_videos=1), **kw))
     while not op.done:
         time.sleep(8)
-        op = client().operations.get(op)
+        op = client(model or config.MODEL_VEO).operations.get(op)
     m = model or config.MODEL_VEO
     costs.add("video", seconds * costs.VEO_PER_SECOND.get(m, 0.10), m, f"{seconds}s clip")   # billed even if filtered
     if op.error:
@@ -134,7 +151,8 @@ def video(prompt, out, aspect="16:9", seconds=8, image_path=None, model=None):
     if not vids:
         raise RuntimeError("veo returned no video (likely filtered)")
     v = vids[0].video
-    client().files.download(file=v)
+    if not getattr(v, "video_bytes", None):   # Vertex returns the bytes inline; the Gemini API returns a file to fetch
+        client(m).files.download(file=v)
     v.save(str(out))
     return Path(out)
 
@@ -143,7 +161,7 @@ def music(prompt, out):
     """Lyria clip -> audio file. Falls back to a plain prompt if the first is refused."""
     cfg = types.GenerateContentConfig(response_modalities=["AUDIO"])
     for pr in (prompt, "Calm minimal ambient instrumental, soft piano and warm pads, slow, no drums, no vocals."):
-        r = _retry(lambda: client().models.generate_content(model=config.MODEL_MUSIC, contents=pr, config=cfg))
+        r = _retry(lambda: client(config.MODEL_MUSIC).models.generate_content(model=config.MODEL_MUSIC, contents=pr, config=cfg))
         cand = (r.candidates or [None])[0]
         for p in (cand.content.parts if cand and cand.content and cand.content.parts else []):
             if p.inline_data and p.inline_data.data:

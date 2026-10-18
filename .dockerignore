@@ -9,3 +9,10 @@ web/node_modules
 web/.next
 web/out
 **/__pycache__
+tests
+.git
+.github
+docs
+firebase.json
+.firebaserc
+*firebase-debug.log

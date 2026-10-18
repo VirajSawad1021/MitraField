@@ -26,3 +26,6 @@ web/next-env.d.ts
 
 # reference videos dropped in by hand
 /This video was made by Claude*
+
+# firebase CLI cache
+.firebase/

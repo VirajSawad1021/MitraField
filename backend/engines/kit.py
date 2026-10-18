@@ -1,5 +1,4 @@
 """Shared pycairo drawing kit: easing, text layout, frame loop."""
-import math
 
 import cairo
 
@@ -89,7 +88,6 @@ def font(ctx, size, family="Inter", bold=True):
 
 # ---- non-Latin scripts: cairo's toy text API has no font fallback or shaping, so text in
 # Devanagari, Tamil, Bengali, Thai or CJK is laid out with HarfBuzz (PIL + raqm) using Noto fonts.
-import os
 from functools import lru_cache
 from pathlib import Path
 

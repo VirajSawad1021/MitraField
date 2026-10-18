@@ -10,7 +10,7 @@ import numpy as np
 
 from .. import config
 from .base import Engine
-from .kit import ACCENT, ACCENT2, INK, MUTED, clean, ease, ramp, render_frames, rgba, text
+from .kit import ACCENT, ACCENT2, INK, clean, ease, ramp, render_frames, rgba, text
 
 COLORS = {"accent": ACCENT, "blue": ACCENT2, "ink": INK}
 

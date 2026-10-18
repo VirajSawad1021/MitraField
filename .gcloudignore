@@ -1,0 +1,18 @@
+# Source upload for Cloud Build. Keep it small and keep secrets and local state out.
+.git
+.github
+.venv
+.env
+.env.*
+data
+scratch
+tests
+docs
+*.log
+*.mp4
+web/node_modules
+web/.next
+web/out
+**/__pycache__
+.pytest_cache
+.ruff_cache

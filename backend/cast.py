@@ -9,10 +9,11 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import costs, gemini, store
+from . import costs, gemini, log, store
 from .look import character as look_character, finish
 from .models import CastItem, Project, Scene
 
+logger = log.get("cast")
 _lock = threading.Lock()
 _ensure_lock = threading.Lock()   # concurrent beats must not generate the same reference twice
 
@@ -49,7 +50,8 @@ def generate(pid, cid):
         gemini.image(finish(prompt, style, p.look), out, aspect=aspect, refs=refs)
         store.mutate(pid, lambda pp: _set(pp, cid, image=str(out), status="ready"))
     except Exception as e:
-        store.mutate(pid, lambda pp: _set(pp, cid, status="error", error=str(e)[:300]))
+        msg = str(e)[:300]
+        store.mutate(pid, lambda pp: _set(pp, cid, status="error", error=msg))
         raise
 
 
@@ -86,7 +88,7 @@ def _safe(pid, cid):
     try:
         generate(pid, cid)
     except Exception as e:
-        print(f"[cast] {cid} failed: {e}", flush=True)
+        logger.warning("cast reference failed: %s", e, extra={"pid": pid, "cid": cid})
 
 
 def refs_for(p: Project, scene: Scene, include_style=True):

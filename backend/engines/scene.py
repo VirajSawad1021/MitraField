@@ -4,7 +4,7 @@ Layered illustration, icons, parallax, cards and kinetic type, all drawn by code
 import re
 import subprocess
 
-from .. import config, gemini, media
+from .. import config, gemini, log, media
 from ..look import get as get_look, palette
 from .base import Engine
 
@@ -37,6 +37,9 @@ def strip_html(s):
     s = (m.group(1) if m else s).strip()
     i = s.lower().find("<!doctype")
     return s[i:] if i >= 0 else s
+
+
+logger = log.get("scene")
 
 
 class SceneEngine(Engine):
@@ -72,25 +75,38 @@ class SceneEngine(Engine):
         n = max(1, int(round(duration * config.FPS)))
         out = out_dir / "clip.mp4"
         errors = []
-        ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "image2pipe", "-framerate", str(config.FPS), "-c:v", "mjpeg",
-                               "-i", "-", "-vf", f"scale={W}:{H},format=yuv420p", "-c:v", "libx264", "-preset", "veryfast",
-                               "-crf", "18", str(out)], stdin=subprocess.PIPE)
-        with sync_playwright() as p:
-            b = p.chromium.launch()
-            pg = b.new_page(viewport={"width": W, "height": H})
-            pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.route("http*://**", lambda r: r.abort())   # self-contained only
-            pg.goto(page_file.resolve().as_uri())
-            pg.wait_for_timeout(300)
-            count = pg.evaluate("document.getAnimations().length")
-            for f in range(n):
-                t = f / config.FPS * 1000
-                pg.evaluate("t => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; } "
-                            "if (window.seek) window.seek(t / 1000); }", t)
-                ff.stdin.write(pg.screenshot(type="jpeg", quality=92))
-            b.close()
-        ff.stdin.close()
-        ff.wait()
+        for crash_try in range(2):   # a browser crash is not the model's fault: retry the same page once
+            ff = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "image2pipe", "-framerate", str(config.FPS), "-c:v", "mjpeg",
+                                   "-i", "-", "-vf", f"scale={W}:{H},format=yuv420p", "-c:v", "libx264", "-preset", "veryfast",
+                                   "-crf", "18", str(out)], stdin=subprocess.PIPE)
+            try:
+                with sync_playwright() as p:
+                    # /dev/shm is tiny in containers (Cloud Run too); without this Chromium crashes mid-render
+                    b = p.chromium.launch(args=["--disable-dev-shm-usage", "--disable-gpu"])
+                    try:
+                        pg = b.new_page(viewport={"width": W, "height": H})
+                        pg.on("pageerror", lambda e: errors.append(str(e)))
+                        pg.route("http*://**", lambda r: r.abort())   # self-contained only
+                        pg.goto(page_file.resolve().as_uri())
+                        pg.wait_for_timeout(300)
+                        count = pg.evaluate("document.getAnimations().length")
+                        for f in range(n):
+                            t = f / config.FPS * 1000
+                            pg.evaluate("t => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; } "
+                                        "if (window.seek) window.seek(t / 1000); }", t)
+                            ff.stdin.write(pg.screenshot(type="jpeg", quality=92))
+                    finally:
+                        b.close()
+                ff.stdin.close()
+                ff.wait()
+                break
+            except Exception as e:
+                ff.kill()
+                ff.wait()
+                logger.warning("browser pass %d failed: %s", crash_try + 1, str(e)[:200])
+                if crash_try == 1:
+                    raise
+                errors.clear()
         problems = list(errors)
         if count == 0 and "window.seek" not in html:
             problems.append("The page has no CSS or Web Animations, so nothing moves. Animate with @keyframes.")
@@ -116,13 +132,13 @@ class SceneEngine(Engine):
         html = code_f.read_text() if code_f.exists() else self._ask(scene, project, duration)
         for attempt in range(3):
             clip, problems = self._render(html, project, duration, out_dir)
-            print(f"[scene] attempt {attempt + 1}: {'ok' if not problems else problems[0][:120]}", flush=True)
+            logger.info("attempt %d: %s", attempt + 1, "ok" if not problems else problems[0][:120])
             if not problems and attempt == 0:
                 try:
                     ok, issue = self._critique(clip, scene, duration)
                 except Exception:
                     ok, issue = True, ""
-                print(f"[scene] critique ok={ok} {issue[:120]}", flush=True)
+                logger.info("critique ok=%s %s", ok, issue[:120])
                 if not ok and issue:
                     problems = [issue]
             if not problems:
