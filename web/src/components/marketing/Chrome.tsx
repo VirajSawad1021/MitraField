@@ -92,7 +92,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6 text-[12px] text-muted">
-          <span>© 2026 MitraField · Viraj Sawad · AI Builder Cup 2026</span>
+          <span>© 2026 MitraField · Viraj Sawad, Gaurav Giri · The Mitra Team · AI Builder Cup 2026</span>
           <span>Built with Gemini, Veo, Nano Banana, Lyria and Manim</span>
         </div>
       </div>

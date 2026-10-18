@@ -8,7 +8,7 @@ truthfully: **exact, code-drawn engines** for math, maps, charts, timelines and 
 **generative engines** (Nano Banana, Veo) for mood, people and places. Facts are computed, never
 hallucinated by a pixel model.
 
-Built for the **Google Cloud AI Builder Cup 2026** · Theme: **Media, Content & Digital Experiences** · by Viraj Sawad.
+Built for the **Google Cloud AI Builder Cup 2026** · Theme: **Media, Content & Digital Experiences** · by Viraj Sawad, Gaurav Giri and The Mitra Team.
 
 ![MitraField landing page](docs/screens/landing.webp)
 
