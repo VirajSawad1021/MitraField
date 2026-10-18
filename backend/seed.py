@@ -45,11 +45,25 @@ def seed_voices(prompts_dir):
         print(f"voice {name}: ready")
 
 
+def firestore_backend():
+    """Application-default credentials when there are any; otherwise the account `gcloud` is logged in as
+    (its access token lasts an hour, plenty for a seed), so no separate browser login is needed."""
+    import google.auth
+    try:
+        google.auth.default()
+        return store.FirestoreBackend()
+    except google.auth.exceptions.DefaultCredentialsError:
+        from google.oauth2.credentials import Credentials
+        token = subprocess.run(["gcloud", "auth", "print-access-token"], check=True, capture_output=True, text=True).stdout.strip()
+        print("no application-default credentials: using the gcloud login", flush=True)
+        return store.FirestoreBackend(Credentials(token).with_quota_project(config.GCP_PROJECT))
+
+
 def main(ids):
     if not config.GCP_PROJECT:
         sys.exit("set GOOGLE_CLOUD_PROJECT")
     bucket = config.env("BUCKET", f"{config.GCP_PROJECT}-mitrafield-data")
-    fs = store.FirestoreBackend()
+    fs = firestore_backend()
     local = store.FileBackend()
     spend = local._rebuild_spend()
     for pid in ids:
@@ -67,6 +81,8 @@ def main(ids):
 
 if __name__ == "__main__":
     if sys.argv[1:2] == ["--voices"]:
+        if config.STORE == "firestore":
+            store.use(firestore_backend())
         seed_voices(sys.argv[2])
         if config.STORE == "firestore":   # the prompts are media: upload them next to the projects
             subprocess.run(["gcloud", "storage", "rsync", "--recursive", str(config.DATA / "voices"),

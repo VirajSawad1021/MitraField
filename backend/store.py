@@ -163,10 +163,10 @@ class FirestoreBackend:
     The project is one JSON string, not a map: engine params contain nested arrays (coordinates,
     chart series) which Firestore does not allow, and a project never approaches the 1 MiB limit."""
 
-    def __init__(self):
+    def __init__(self, credentials=None):
         from google.cloud import firestore
         self.fs = firestore
-        self.db = firestore.Client(project=config.GCP_PROJECT or None)
+        self.db = firestore.Client(project=config.GCP_PROJECT or None, credentials=credentials)
         self.col = self.db.collection("projects")
 
     @staticmethod
