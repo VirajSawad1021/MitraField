@@ -10,7 +10,7 @@ COPY web/ ./
 RUN NODE_ENV=production npx next build
 
 # ---- runtime: Python + ffmpeg + cairo/pango + LaTeX for Manim + Chromium for motion scenes
-FROM python:3.12-slim
+FROM python:3.14-slim
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 DEBIAN_FRONTEND=noninteractive \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
