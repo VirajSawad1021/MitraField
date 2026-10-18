@@ -200,16 +200,19 @@ class FirestoreBackend:
             t.set(ref, self._pack(doc))
             return doc
 
-        for attempt in range(12):
+        tries = 30
+        for attempt in range(tries):
             try:
-                return run(self.db.transaction())
+                # one client attempt per round: our jittered backoff spreads contending workers apart, where the
+                # client's own immediate retries keep them colliding in lockstep
+                return run(self.db.transaction(max_attempts=1))
             except (gex.Aborted, gex.Conflict, gex.DeadlineExceeded, ValueError) as e:
                 # the client gives up with ValueError("Failed to commit transaction in N attempts") on contention
                 if isinstance(e, ValueError) and not isinstance(e.__cause__, (gex.Aborted, gex.Conflict, gex.DeadlineExceeded)):
                     raise
-                if attempt == 11:
+                if attempt == tries - 1:
                     raise
-                time.sleep(random.uniform(0.05, 0.25) * min(2 ** attempt, 16))
+                time.sleep(random.uniform(0.0, 0.2) * min(2 ** attempt, 20))
 
     def delete(self, pid):
         import shutil
