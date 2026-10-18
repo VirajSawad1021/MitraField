@@ -8,7 +8,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 export const metadata: Metadata = {
   title: "MitraField: explainer videos, directed by AI",
   description:
-    "Describe what you want explained. MitraField's director agent writes the story and sends every beat to the engine that can show it best: exact math, real maps and sketches where accuracy matters, Veo and Nano Banana where mood does.",
+    "Describe what you want explained. Ask a question and get a narrated explainer video. An AI director writes the script and picks the right visual for every scene: real math, maps and charts where accuracy matters, Veo and Nano Banana where mood does, narrated in your own cloned voice.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

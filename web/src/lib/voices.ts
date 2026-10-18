@@ -7,8 +7,8 @@ export const voiceLabel = (v: string, meta?: Meta | null) =>
 export function voiceGroups(meta?: Meta | null) {
   const ready = (meta?.voice_profiles ?? []).filter((p) => p.status === "ready");
   return [
-    { label: "Channel voices", items: ready.filter((p) => p.builtin).map((p) => ({ id: p.id, name: p.name })) },
-    { label: "Your voices", items: ready.filter((p) => !p.builtin).map((p) => ({ id: p.id, name: p.name })) },
+    { label: "Cloned voices", items: ready.filter((p) => p.builtin).map((p) => ({ id: p.id, name: p.name })) },
+    { label: "Your cloned voices", items: ready.filter((p) => !p.builtin).map((p) => ({ id: p.id, name: p.name })) },
     { label: "Gemini voices", items: (meta?.voices ?? ["Charon"]).map((v) => ({ id: v, name: v })) },
   ].filter((g) => g.items.length);
 }

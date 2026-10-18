@@ -113,3 +113,20 @@ def test_instructions_are_optional_stored_trimmed_and_capped(queued):
     too_long = "a" * (config.MAX_INSTRUCTIONS + 1)
     assert client.post("/api/projects", json={"topic": "x", "instructions": too_long}).status_code == 422
     assert client.patch(f"/api/projects/{p['id']}", json={"instructions": too_long}).status_code == 422
+
+
+def test_outdated_follows_the_scenes_the_export_was_made_from(project):
+    from backend import pipeline
+    out = config.DATA / project.id / "out"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "v.mp4").write_bytes(b"x")
+
+    def exported(p):
+        p.render_path, p.render_status = str(out / "v.mp4"), "done"
+        p.render_sig = pipeline.render_sig(p)
+    store.mutate(project.id, exported)
+    assert client.get(f"/api/projects/{project.id}").json()["outdated"] is False
+    store.mutate(project.id, lambda p: setattr(p.scenes[0], "clip", "/elsewhere/clip_new.mp4"))
+    assert client.get(f"/api/projects/{project.id}").json()["outdated"] is True
+    store.mutate(project.id, lambda p: setattr(p, "render_sig", None))   # exports from before the fingerprint existed
+    assert client.get(f"/api/projects/{project.id}").json()["outdated"] is False

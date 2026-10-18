@@ -52,7 +52,7 @@ export const DEMOS: Demo[] = [
     video: "/demo/hormuz_hi.mp4", poster: "/demo/hormuz_hi.jpg",
     beats: 9, exact: 5, length: "1:03", voice: "Johnny", renderTime: "a few minutes",
     route: ["title", "globe", "veo", "whiteboard", "manim", "character", "globe", "veo", "image"],
-    note: "One click from the English Hormuz video. The director rewrote the narration for natural spoken Hindi, the narrator read it, and every on-screen label (kinetic type, map pins, the Manim chart) was re-rendered in Devanagari. Picture beats reused their finished shots, so nothing was regenerated.",
+    note: "One click from the English Hormuz video. The director rewrote the narration for natural spoken Hindi, the same cloned narrator read it, and every on-screen label (animated text, map pins, the Manim chart) was re-rendered in Devanagari. Picture beats reused their finished shots, so nothing was regenerated.",
   },
 ];
 
@@ -62,31 +62,31 @@ export const STEPS: Step[] = [
   {
     title: "Ask a question", who: "You", path: "/new", shot: "/demo/steps/01_new.webp",
     body: "Type what you want explained and pick the format, length, language, narrator and audience. Notes, PDFs and images are optional sources the director treats as the truth.",
-    points: ["Landscape video or vertical Short", "Your own cloned narrator or a Gemini voice", "Nothing renders until you have seen the storyboard"],
+    points: ["Landscape video or vertical Short", "Your own cloned voice or a Gemini voice", "Nothing renders until you have seen the storyboard"],
   },
   {
     title: "The director writes and routes", who: "Director agent", path: "/studio", shot: "/demo/steps/03_storyboard.webp",
-    body: "Gemini writes the narration beat by beat, hook first and one idea per beat, then sends every beat to the engine that can show it truthfully. The coloured bar is the routing at a glance.",
-    points: ["Facts, numbers and maps go to exact engines", "Mood and metaphor go to Nano Banana and Veo", "Veo is capped at two hero shots per video"],
+    body: "Gemini writes the narration scene by scene, hook first and one idea per scene, then picks the visual that can show each one truthfully.",
+    points: ["Facts, numbers and maps are drawn from data and code", "Mood and metaphor go to Nano Banana and Veo, labelled AI-generated", "Veo is capped at two hero shots per video"],
   },
   {
-    title: "Change any beat", who: "You", path: "/studio", shot: "/demo/steps/04_inspector.webp",
-    body: "Click a beat to edit its line, swap its engine or describe what the viewer should see. Or just tell the director what you want, like 'simpler' or 'show it on a map', and it rewrites that beat in context.",
-    points: ["Only the beats you change are re-rendered", "Raw engine parameters for full control", "Drag beats to reorder the story"],
+    title: "Change any scene", who: "You", path: "/studio", shot: "/demo/steps/04_inspector.webp",
+    body: "Click a scene to edit its line, switch the visual or describe what the viewer should see. Or just tell the director what you want, like 'simpler' or 'show it on a map', and it rewrites that scene in context.",
+    points: ["Only the scenes you change are re-rendered", "Raw parameters for full control", "Drag scenes to reorder the story"],
   },
   {
     title: "Render, with a self-check", who: "Engines", path: "/studio", shot: "/demo/steps/05_rendering.webp",
-    body: "Each beat is narrated first, so its visual is rendered to the exact length of the sentence. Beats render in parallel; Manim code is checked by Gemini looking at the frames and repaired if text overlaps.",
-    points: ["Every narration line is transcribed and retaken if it drifts", "Failed beats fall back to a safe engine instead of breaking the video", "Generated stills and Veo shots are cached between renders"],
+    body: "Each scene is narrated first, so its visual is rendered to the exact length of the sentence. Scenes render in parallel; Gemini looks at the frames and repairs anything that overlaps.",
+    points: ["Every narration line is transcribed and retaken if it drifts", "A failed scene falls back to a safe visual instead of breaking the video", "Generated stills and Veo shots are cached between renders"],
   },
   {
     title: "Watch and export", who: "Assembler", path: "/studio", shot: "/demo/steps/06_final.webp",
-    body: "The beats are joined with a Lyria music bed kept low under the voice, mastered to streaming loudness, and exported with subtitles.",
+    body: "The scenes are joined with a Lyria music bed kept low under the voice, mastered to streaming loudness, and exported with subtitles and an invisible watermark.",
     points: ["MP4 plus an .srt subtitle file", "Music generated for the topic, ducked under narration", "-14 LUFS, ready for YouTube"],
   },
   {
     title: "Keep going", who: "Director agent", path: "/projects", shot: "/demo/steps/07_projects.webp",
     body: "Every video stays editable in Projects. Turn a topic into a vertical Short, or translate a finished video: the director rewrites the narration for natural speech and the visuals are reused.",
-    points: ["One-click language versions", "Shorts and long-form from the same workspace", "Projects keep their sources, routing and renders"],
+    points: ["One-click language versions", "Shorts and long-form from the same workspace", "Projects keep their sources, scenes and renders"],
   },
 ];

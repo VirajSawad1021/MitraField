@@ -96,7 +96,7 @@ def _frames(clip: Path, dur: float, dest: Path):
 def review_beat(p, s, i):
     """Gemini looks at the start, middle and end of one beat in context."""
     if not (s.clip and Path(s.clip).exists()):
-        return {"ok": False, "issues": [{"kind": "empty_or_broken", "detail": "The beat has no rendered clip."}]}
+        return {"ok": False, "issues": [{"kind": "empty_or_broken", "detail": "The scene has no rendered clip."}]}
     from .look import get as get_look
     lk = get_look(p.look)
     names = {c.id: f"{c.name} ({c.kind}): {c.description}" for c in p.cast}
@@ -153,10 +153,10 @@ def run(pid):
 
 def _summary(flagged, tech_bad):
     if not flagged and not tech_bad:
-        return "Every beat and every technical check passed."
+        return "Every scene and every technical check passed."
     bits = []
     if flagged:
-        bits.append(f"{len(flagged)} beat{'s' if len(flagged) > 1 else ''} flagged")
+        bits.append(f"{len(flagged)} scene{'s' if len(flagged) > 1 else ''} flagged")
     if tech_bad:
         bits.append("technical: " + ", ".join(tech_bad))
     return "; ".join(bits).capitalize() + "."

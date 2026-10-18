@@ -98,6 +98,8 @@ def media_url(p: Project):
     for s in d["scenes"]:
         s["clip_url"], s["thumb_url"], s["audio_url"] = u(s["clip"]), u(s["thumb"]), u(s["audio"])
     d["render_url"] = u(d["render_path"])
+    # the export no longer matches the scenes (one was edited or re-rendered since): the studio offers "Update video"
+    d["outdated"] = bool(d["render_url"] and p.render_sig and p.render_sig != pipeline.render_sig(p))
     d["cost"] = costs.summary(p.id)
     if d.get("qa"):
         d["qa"]["sheet_url"] = u(d["qa"].get("sheet"))
