@@ -25,9 +25,12 @@ built to run on Google Cloud, why each piece was chosen, and where its limits ar
 │  Directs, narrates, renders one beat, assembles. Calls the Gemini API (key from Secret Manager).      │
 │  Runs model-written code in a sandbox (see Security).      SA: worker (Firestore, key)        │
 └───────────────┬──────────────────────────────────────────────────────────────────────────────────┘
-                │ media (clips, audio, stills, final mp4)
-                ▼
-        Cloud Storage bucket, mounted at /data in both services (no public access)
+                │ media (clips, audio, stills, final mp4)         │ narration, voice build (ID token)
+                ▼                                                 ▼
+        Cloud Storage bucket, mounted at /data      ┌── Cloud Run: mitrafield-voice (private, GPU) ──┐
+        in api and worker (no public access)        │  OmniVoice on an NVIDIA L4. Stateless: no DB,   │
+                                                    │  no storage. Scales to zero.   SA: voice (logs) │
+                                                    └─────────────────────────────────────────────────┘
 ```
 
 One container image, two services. `STUDIO_ROLE` decides which routes a process serves, so the API
@@ -43,6 +46,8 @@ process cannot execute a render even if asked, and the worker is not reachable f
 | Firestore for project state | JSON files on a Cloud Storage mount | A FUSE mount has no cross-instance locking. Firestore transactions make concurrent workers safe and list queries fast. |
 | Project stored as one JSON string per document | Native map with sub-collections | Engine parameters contain nested arrays (coordinates, series), which Firestore rejects. A project is tens of KB, far below the 1 MiB limit. |
 | Gemini API key in Secret Manager (worker only) | Vertex AI with the service account | The Gemini API had the headroom: Vertex image quota on a new project returned 429s. The key is injected by Cloud Run, never baked into the image, and the API service cannot read it. `STUDIO_VERTEX=1` switches to Vertex with no key. |
+| OmniVoice as its own GPU service | Inside the worker image; a GPU on every worker | Only narration needs a GPU, and only for seconds. A separate L4 service scales to zero on its own and keeps the 16 GB torch image out of the render path. The worker falls back to a Gemini voice if it is cold or unavailable, so a voice outage never fails a video. |
+| Voice profiles in Firestore, prompts in the bucket, GPU service stateless | The service keeps its own database (as the standalone OmniVoice server does) | The studio owns the profile (name, transcript, status). The small voice-clone prompt travels with each synthesis request, so any GPU instance serves any voice and a new one has nothing to restore. |
 | Cloud Storage mount for media | Signed URLs and the client library | Engines write files with ffmpeg, Manim and Chromium; a path is the interface they need. |
 | Firebase Hosting in front | API serving the UI | CDN caching for the static app, security headers, a stable `web.app` domain. The API can still serve the UI on its own. |
 
@@ -131,6 +136,6 @@ process cannot execute a render even if asked, and the worker is not reachable f
   100 KB.
 * Cloud Tasks caps an HTTP job at 30 minutes. A beat takes minutes; Veo is the longest at a few.
 * The network-namespace layer of the sandbox depends on the runtime. See Security.
-* Voice cloning (OmniVoice) is a local option only; deployed narration is Gemini TTS. See `docs/SPEC.md` for the
-  GPU service design if the cloned voices are needed in production.
+* Voice cloning is consent-gated (an explicit statement is required), passcode-protected, capped at 20 profiles, and the
+  uploaded sample is decoded by ffmpeg before the model sees it. Samples and prompts are never served from `/files`.
 * The demo is public-read by design; add Firebase Authentication to make projects private per user.

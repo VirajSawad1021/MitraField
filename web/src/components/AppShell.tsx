@@ -10,6 +10,7 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
   const nav = [
     { href: "/projects", label: "Projects" },
     { href: "/studio", label: "Studio" },
+    { href: "/voices", label: "Voices" },
     { href: "/demo", label: "Demo" },
   ];
   return (

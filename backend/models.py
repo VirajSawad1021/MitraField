@@ -25,6 +25,20 @@ class CastItem(BaseModel):
     error: str | None = None
 
 
+class VoiceProfile(BaseModel):
+    """A narrator a person cloned from a short sample of their own voice. `id` is what Project.voice stores.
+    The sample and the model's voice-clone prompt live in the media volume under voices/<id>/."""
+    id: str = Field(default_factory=lambda: "v_" + new_id())
+    name: str
+    language: str = "English"
+    reference_text: str = ""
+    status: Literal["pending", "ready", "error"] = "pending"
+    error: str | None = None
+    builtin: bool = False                 # the channel's own voices, seeded rather than created in the app
+    post_filter: str | None = None        # optional ffmpeg audio filter applied after synthesis
+    created: float = 0.0
+
+
 class Scene(BaseModel):
     id: str = Field(default_factory=new_id)
     narration: str

@@ -53,3 +53,14 @@ def test_spend_counters(fs):
     store.delete("ffffffffff")
     with pytest.raises(FileNotFoundError):
         store.load("ffffffffff")
+
+
+def test_voice_profiles_roundtrip(fs):
+    from backend.models import VoiceProfile
+    store.voice_save(VoiceProfile(id="v_aaaaaaaaaa", name="Asha", reference_text="hi", status="ready"))
+    store.voice_save(VoiceProfile(id="Johnny", name="Johnny", builtin=True, status="ready"))
+    assert [v.id for v in store.voice_list()] == ["Johnny", "v_aaaaaaaaaa"]
+    assert store.voice_get("v_aaaaaaaaaa").reference_text == "hi"
+    store.voice_delete("v_aaaaaaaaaa")
+    with pytest.raises(FileNotFoundError):
+        store.voice_get("v_aaaaaaaaaa")

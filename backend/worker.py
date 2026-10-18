@@ -43,6 +43,9 @@ def selftest(request: Request):
     store.list_all()
     out["firestore"] = "ok"
     out["model"] = gemini.text("Reply with the single word: ok", model=config.MODEL_FAST).strip()[:20]
+    from . import voices
+    if voices.available():
+        out["voice"] = "ok" if voices.health().get("ok") else "down"
     return out
 
 

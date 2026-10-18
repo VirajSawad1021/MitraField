@@ -16,8 +16,9 @@ REPO="${REPO:-mitrafield}"
 QUEUE="${QUEUE:-mitrafield-render}"
 BUDGET_USD="${BUDGET_USD:-50}"
 SA_DOMAIN="${PROJECT}.iam.gserviceaccount.com"
-API_SA="mitrafield-api@${SA_DOMAIN}"          # public service: reads state, enqueues jobs. Cannot render, cannot call Vertex.
-WORKER_SA="mitrafield-worker@${SA_DOMAIN}"    # private service: renders. Vertex AI, Firestore, storage.
+API_SA="mitrafield-api@${SA_DOMAIN}"          # public service: reads state, enqueues jobs. Cannot render, cannot call models.
+WORKER_SA="mitrafield-worker@${SA_DOMAIN}"
+VOICE_SA="mitrafield-voice@${SA_DOMAIN}"      # private GPU service (OmniVoice): stateless, no data access.
 TASKS_SA="mitrafield-tasks@${SA_DOMAIN}"      # identity Cloud Tasks presents to the worker. May only invoke it.
 DEPLOY_SA="mitrafield-deploy@${SA_DOMAIN}"    # identity GitHub Actions assumes.
 cd "$(dirname "$0")/.."
@@ -58,7 +59,7 @@ gcloud tasks queues describe "$QUEUE" --location="$REGION" >/dev/null 2>&1 \
   || gcloud tasks queues create "$QUEUE" --location="$REGION" "${QFLAGS[@]}"
 
 echo "== service accounts"
-for sa in api worker tasks deploy; do
+for sa in api worker tasks voice deploy; do
   gcloud iam service-accounts describe "mitrafield-$sa@${SA_DOMAIN}" >/dev/null 2>&1 \
     || gcloud iam service-accounts create "mitrafield-$sa" --display-name="MitraField $sa"
 done
@@ -67,11 +68,13 @@ bind() { gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAcco
 bind "$API_SA" roles/datastore.user
 bind "$API_SA" roles/cloudtasks.enqueuer
 bind "$API_SA" roles/logging.logWriter
-# worker: renders. Vertex AI + Firestore + media. Nothing else.
+# worker: renders. Firestore + media + the Gemini key. Nothing else.
 bind "$WORKER_SA" roles/datastore.user
 bind "$WORKER_SA" roles/aiplatform.user
 bind "$WORKER_SA" roles/cloudtasks.enqueuer
 bind "$WORKER_SA" roles/logging.logWriter
+# voice: OmniVoice on a GPU. Stateless, holds no data, reads nothing; it only needs to write logs.
+bind "$VOICE_SA" roles/logging.logWriter
 for sa in "$API_SA" "$WORKER_SA"; do
   gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member="serviceAccount:$sa" --role=roles/storage.objectAdmin >/dev/null
 done
@@ -82,7 +85,7 @@ done
 # deploy: build, deploy, run the Firebase hosting release. No access to data or models.
 for r in roles/run.admin roles/cloudbuild.builds.editor roles/artifactregistry.writer roles/firebasehosting.admin \
          roles/serviceusage.serviceUsageConsumer roles/storage.admin; do bind "$DEPLOY_SA" "$r"; done
-for sa in "$API_SA" "$WORKER_SA"; do
+for sa in "$API_SA" "$WORKER_SA" "$VOICE_SA"; do
   gcloud iam service-accounts add-iam-policy-binding "$sa" --member="serviceAccount:$DEPLOY_SA" --role=roles/iam.serviceAccountUser >/dev/null
 done
 # The deploy gate mints an identity token for the worker (impersonating itself), and Cloud Build runs as the

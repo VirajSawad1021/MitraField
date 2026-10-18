@@ -5,7 +5,7 @@ content-hash cache and does nothing.
 import shutil
 from pathlib import Path
 
-from . import cast, config, costs, director, jobs, log, pipeline, store
+from . import cast, config, costs, director, jobs, log, pipeline, store, voices
 from .errors import friendly_error
 from .models import new_id
 
@@ -38,6 +38,11 @@ def cast_ensure(pid):
 @jobs.task("cast_generate")
 def cast_generate(pid, cid):
     cast.generate(pid, cid)
+
+
+@jobs.task("voice_build")
+def voice_build(vid):
+    voices.build(vid)
 
 
 @jobs.task("render_all")

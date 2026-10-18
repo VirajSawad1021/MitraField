@@ -33,6 +33,9 @@ else
   PROVIDER_ENV=",STUDIO_VERTEX=0${VEO_FAST:+,STUDIO_MODEL_VEO=${VEO_FAST}}${VEO_LITE:+,STUDIO_MODEL_VEO_DRAFT=${VEO_LITE}}"
   PROVIDER_SECRETS=(--set-secrets GEMINI_API_KEY=gemini-api-key:latest)
 fi
+VOICE_SA="mitrafield-voice@${SA_DOMAIN}"
+VOICE_URL="https://mitrafield-voice-${PROJECT_NUMBER}.${REGION}.run.app"
+VOICE_REPO_IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/mitrafield-voice"
 VOLUME_OPTS="uid=10001,gid=10001,file-mode=666,dir-mode=777,implicit-dirs,metadata-cache-ttl-secs=30"
 cd "$(dirname "$0")/.."
 
@@ -68,11 +71,48 @@ canary_url() { # canary_url <service>: tag URL when a canary exists, else the se
 
 retry() { local n=0; until "$@"; do n=$((n+1)); [ $n -ge 6 ] && return 1; sleep 10; done; }
 
+# OmniVoice on a Cloud Run GPU: private, stateless, scales to zero. Optional (VOICE=0 skips it): without it the
+# studio narrates in Gemini voices and hides voice cloning. A failed first deploy (e.g. no GPU quota in the
+# region) does not block the release; a failed update leaves the previous revision serving.
+deploy_voice() {
+  local vtag; vtag="$(git ls-files -s voice | sha1sum | cut -c1-12)"   # the image changes only when voice/ does
+  local vimg="${VOICE_REPO_IMAGE}:${vtag}"
+  if ! gcloud artifacts docker images describe "$vimg" --project "$PROJECT" >/dev/null 2>&1; then
+    echo "== build $vimg (torch + weights, slow the first time)"
+    gcloud builds submit voice --project "$PROJECT" --config deploy/cloudbuild-voice.yaml --region "$REGION" \
+      --substitutions="_IMAGE=${vimg},_REPO_IMAGE=${VOICE_REPO_IMAGE}" || return 1
+  fi
+  local mode=()
+  exists mitrafield-voice && mode=(--no-traffic --tag canary)
+  echo "== voice (private GPU, scales to zero)"
+  gcloud run deploy mitrafield-voice --project "$PROJECT" --region "$REGION" --image "$vimg" ${mode[@]+"${mode[@]}"} \
+    --no-allow-unauthenticated --service-account "$VOICE_SA" \
+    --gpu 1 --gpu-type nvidia-l4 --no-gpu-zonal-redundancy --cpu 4 --memory 16Gi --no-cpu-throttling \
+    --concurrency 4 --timeout 300 --min-instances 0 --max-instances 2 --labels "app=mitrafield,commit=${vtag}" || return 1
+  for sa in "$WORKER_SA" "$DEPLOY_SA"; do
+    gcloud run services add-iam-policy-binding mitrafield-voice --project "$PROJECT" --region "$REGION" \
+      --member="serviceAccount:$sa" --role=roles/run.invoker >/dev/null || return 1
+  done
+  echo "== gate: voice service (model loaded on a GPU)"
+  local tok; tok="$(gcloud auth print-identity-token --impersonate-service-account="$DEPLOY_SA" --audiences="$VOICE_URL" --include-email)"
+  local n=0 u; u="$(canary_url mitrafield-voice)"
+  until curl -fsS -H "Authorization: Bearer $tok" "$u/health" | tee /dev/stderr | grep -q '"cuda":true'; do
+    n=$((n+1)); [ $n -ge 30 ] && return 1; sleep 10   # a cold GPU instance takes a few minutes
+  done
+  promote mitrafield-voice
+}
+if [ "${VOICE:-1}" = 0 ]; then
+  VOICE_URL=""
+elif ! deploy_voice; then
+  if exists mitrafield-voice; then echo "WARNING: voice update failed; the previous revision keeps serving"
+  else echo "WARNING: voice service not deployed; narration uses Gemini voices"; VOICE_URL=""; fi
+fi
+
 echo "== worker (private, one render per instance)"
 deploy mitrafield-worker \
   --no-allow-unauthenticated --service-account "$WORKER_SA" \
   --cpu 4 --memory 8Gi --concurrency 1 --timeout 1800 --min-instances 0 --max-instances 6 \
-  --set-env-vars "STUDIO_ROLE=worker,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CALLERS=${DEPLOY_SA},STUDIO_CAP_DAY_USD=${CAP_DAY_USD:-25},STUDIO_CAP_PROJECT_USD=${CAP_PROJECT_USD:-5}${PROVIDER_ENV}" \
+  --set-env-vars "STUDIO_ROLE=worker,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CALLERS=${DEPLOY_SA},STUDIO_CAP_DAY_USD=${CAP_DAY_USD:-25},STUDIO_CAP_PROJECT_USD=${CAP_PROJECT_USD:-5}${PROVIDER_ENV},STUDIO_OMNI_URL=${VOICE_URL}" \
   ${PROVIDER_SECRETS[@]+"${PROVIDER_SECRETS[@]}"}
 # Cloud Tasks (as the tasks SA) and the deploy gate may invoke the worker; nobody else.
 for sa in "$TASKS_SA" "$DEPLOY_SA"; do
@@ -92,7 +132,7 @@ echo "== api (public, stateless)"
 deploy mitrafield-api \
   --allow-unauthenticated --service-account "$API_SA" \
   --cpu 1 --memory 2Gi --concurrency 40 --timeout 300 --min-instances 0 --max-instances 5 \
-  --set-env-vars "STUDIO_ROLE=api,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CORS=${STUDIO_CORS:-${API_URL}}" \
+  --set-env-vars "STUDIO_ROLE=api,GOOGLE_CLOUD_PROJECT=${PROJECT},STUDIO_REGION=${REGION},STUDIO_WORKER_URL=${WORKER_URL},STUDIO_TASKS_SA=${TASKS_SA},STUDIO_CORS=${STUDIO_CORS:-${API_URL}},STUDIO_OMNI_URL=${VOICE_URL}" \
   --set-secrets STUDIO_PASSCODE=studio-passcode:latest
 echo "== gate: api readiness and metadata"
 U="$(canary_url mitrafield-api)"

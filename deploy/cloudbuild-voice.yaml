@@ -1,0 +1,21 @@
+# Builds the OmniVoice GPU image (torch + the model weights, ~16 GB) with layer caching.
+# Used by deploy/deploy.sh:  gcloud builds submit voice --config deploy/cloudbuild-voice.yaml --substitutions=_IMAGE=...,_REPO_IMAGE=...
+steps:
+  - id: pull-cache
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args: ["-c", "docker pull ${_REPO_IMAGE}:cache || true"]
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    env: ["DOCKER_BUILDKIT=1"]
+    args: ["build", "--build-arg", "BUILDKIT_INLINE_CACHE=1", "--cache-from", "${_REPO_IMAGE}:cache",
+           "-t", "${_IMAGE}", "-t", "${_REPO_IMAGE}:cache", "."]
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "--all-tags", "${_REPO_IMAGE}"]
+images: []
+options:
+  machineType: E2_HIGHCPU_8
+  diskSizeGb: 200
+  logging: CLOUD_LOGGING_ONLY
+timeout: 3000s

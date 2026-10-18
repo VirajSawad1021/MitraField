@@ -10,13 +10,13 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import cast, config, costs, engines, jobs, log, pipeline, store, tasks, tts  # noqa: F401  (tasks registers the handlers)
+from . import cast, config, costs, engines, jobs, log, pipeline, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
 from .models import CastItem, Project, Scene, Source
 
 log.setup()
@@ -107,9 +107,9 @@ def media_url(p: Project):
 @api.get("/api/meta")
 def meta():
     from .look import LOOKS
-    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.VOICES, "channel_voices": list(tts.OMNI_VOICES), "default_voice": tts.DEFAULT_VOICE,
+    return {"locked": bool(PASSCODE), "looks": [{"id": k, "label": v["label"], "blurb": v["blurb"]} for k, v in LOOKS.items()], "engines": [e.info() for e in engines.REGISTRY.values()], "voices": tts.GEMINI_VOICES, "voice_profiles": tts.catalogue()[0], "cloning": voices.available(), "default_voice": tts.DEFAULT_VOICE,
             "models": {"director": config.MODEL_DIRECTOR, "code": config.MODEL_CODE, "image": config.MODEL_IMAGE,
-                       "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}", "music": config.MODEL_MUSIC}}
+                       "video": config.MODEL_VEO, "voice": f"OmniVoice clones + {config.MODEL_TTS}" if voices.available() else config.MODEL_TTS, "music": config.MODEL_MUSIC}}
 
 
 def _cover(p):
@@ -130,6 +130,50 @@ def projects():
                "duration": round(sum(s.get("duration") or 0 for s in p.get("scenes", [])), 1),
                "engines": sorted({s["engine"] for s in p.get("scenes", [])})}
             for p in store.list_all()]
+
+
+class VoiceOut(BaseModel):
+    id: str
+    name: str
+    language: str
+    status: str
+    error: str | None
+    builtin: bool
+
+
+def voice_out(v):
+    return VoiceOut(**v.model_dump(include=set(VoiceOut.model_fields)))
+
+
+@api.get("/api/voices")
+def list_voices():
+    return [voice_out(v) for v in store.voice_list()]
+
+
+@api.post("/api/voices")
+async def create_voice(name: str = Form(...), file: UploadFile = File(...), reference_text: str = Form(""),
+                       language: str = Form("English"), consent: bool = Form(False)):
+    """Clone a narrator from a short sample. Needs the passcode like every write, and an explicit statement
+    that the voice is the speaker's own or used with permission."""
+    audio = await file.read(voices.MAX_UPLOAD + 1)
+    try:
+        return voice_out(voices.create(name, audio, reference_text, language, consent))
+    except voices.VoiceError as e:
+        raise HTTPException(400, str(e))
+
+
+@api.delete("/api/voices/{vid}")
+def delete_voice(vid: str):
+    if not voices.ID.match(vid):
+        raise HTTPException(404, "voice not found")
+    try:
+        v = store.voice_get(vid)
+    except FileNotFoundError:
+        raise HTTPException(404, "voice not found")
+    if v.builtin:
+        raise HTTPException(403, "The channel voices cannot be deleted.")
+    store.voice_delete(vid)
+    return {"ok": True}
 
 
 class NewProject(BaseModel):
@@ -371,10 +415,10 @@ def job_list():
 
 
 class PublicFiles(StaticFiles):
-    """Rendered media is public (the demo is browsable). Uploaded sources are not."""
+    """Rendered media is public (the demo is browsable). Uploaded sources and voice samples are not."""
 
     async def get_response(self, path, scope):
-        if "sources/" in path or path.endswith((".json", ".jsonl")):
+        if "sources/" in path or path.startswith("voices/") or path.endswith((".json", ".jsonl")):
             raise HTTPException(404)
         return await super().get_response(path, scope)
 

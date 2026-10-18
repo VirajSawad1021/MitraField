@@ -95,7 +95,7 @@ cd web && NODE_ENV=production npx next build                      # rebuild the 
 
 Locally everything runs in one process (`STUDIO_ROLE=all`, JSON files, in-process job threads). Manim runs with the
 interpreter that has it installed; set `STUDIO_MANIM_PY` if yours lives elsewhere. Narration can also use the
-channel's own OmniVoice clones (Johnny, Viraj v8) via `STUDIO_OMNI_URL`; deployments use Gemini TTS.
+channel's own OmniVoice clones (Johnny, Viraj v8) and any voice created on the Voices page, rendered by the `voice/` GPU service (`STUDIO_OMNI_URL`; locally `docker run --gpus all -p 8012:8080` the `voice/` image). Without it, narration uses Gemini voices.
 
 ```bash
 .venv/bin/ruff check .                                            # lint

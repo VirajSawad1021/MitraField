@@ -67,7 +67,7 @@ export function Badge({ tone = "neutral", children, className = "", title }: { t
 export const inputCls =
   "w-full rounded-xl border border-line-strong/80 bg-white px-3.5 py-2.5 text-[14px] text-ink placeholder:text-[#aaa79f] transition-colors focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink disabled:bg-panel";
 
-export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+export function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block space-y-1.5">
       <span className="block text-[12px] font-semibold text-ink">{label}</span>

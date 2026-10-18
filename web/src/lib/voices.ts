@@ -1,9 +1,14 @@
-export const voiceLabel = (v: string) => v.replace("_v", " v").replace("_", " ");
+import type { Meta } from "./api";
 
-/** Channel clones first (OmniVoice), then Gemini voices. */
-export function voiceGroups(voices: string[], channel: string[]) {
+export const voiceLabel = (v: string, meta?: Meta | null) =>
+  meta?.voice_profiles.find((p) => p.id === v)?.name ?? v.replace("_v", " v").replace("_", " ");
+
+/** The channel's own voices, the person's cloned voices, then Gemini voices. Unfinished clones are not selectable. */
+export function voiceGroups(meta?: Meta | null) {
+  const ready = (meta?.voice_profiles ?? []).filter((p) => p.status === "ready");
   return [
-    { label: "Channel voices", items: voices.filter((v) => channel.includes(v)) },
-    { label: "Gemini voices", items: voices.filter((v) => !channel.includes(v)) },
-  ];
+    { label: "Channel voices", items: ready.filter((p) => p.builtin).map((p) => ({ id: p.id, name: p.name })) },
+    { label: "Your voices", items: ready.filter((p) => !p.builtin).map((p) => ({ id: p.id, name: p.name })) },
+    { label: "Gemini voices", items: (meta?.voices ?? ["Charon"]).map((v) => ({ id: v, name: v })) },
+  ].filter((g) => g.items.length);
 }

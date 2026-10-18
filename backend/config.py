@@ -63,7 +63,8 @@ MODEL_MUSIC = env("STUDIO_MODEL_MUSIC", "lyria-3-clip-preview")
 
 # Manim runs as a subprocess of the interpreter that has it installed (this one, unless overridden).
 MANIM_PY = env("STUDIO_MANIM_PY", sys.executable)
-OMNI_URL = env("STUDIO_OMNI_URL", "http://localhost:8002")   # OmniVoice TTS server; empty = not available
+OMNI_URL = env("STUDIO_OMNI_URL").rstrip("/")   # OmniVoice GPU service (see voice/); empty = Gemini voices only
+MAX_VOICES = int(env("STUDIO_MAX_VOICES", "20"))
 
 FPS = 30
 SIZES = {"16:9": (1920, 1080), "9:16": (1080, 1920)}

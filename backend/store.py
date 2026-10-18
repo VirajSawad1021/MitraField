@@ -20,7 +20,7 @@ from datetime import datetime, UTC
 from pathlib import Path
 
 from . import config
-from .models import Project
+from .models import Project, VoiceProfile
 
 _TOKEN = "${DATA}"
 
@@ -90,6 +90,29 @@ class FileBackend:
             except ValueError:
                 pass
         return out
+
+    # small side collections (voice profiles): one JSON file per document
+    def doc_get(self, col, did):
+        return json.loads((config.DATA / col / did / "doc.json").read_text())
+
+    def doc_put(self, col, did, doc):
+        with self._lock:
+            f = config.DATA / col / did / "doc.json"
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(json.dumps(doc))
+
+    def doc_list(self, col):
+        out = []
+        for f in sorted((config.DATA / col).glob("*/doc.json")):
+            try:
+                out.append(json.loads(f.read_text()))
+            except ValueError:
+                pass
+        return out
+
+    def doc_delete(self, col, did):
+        import shutil
+        shutil.rmtree(config.DATA / col / did, ignore_errors=True)
 
     # cost ledger and spend counters
     def add_cost(self, pid, row):
@@ -199,6 +222,21 @@ class FirestoreBackend:
         q = self.col.order_by("updated", direction=self.fs.Query.DESCENDING).limit(200)
         return [json.loads(s.get("data")) for s in q.stream()]
 
+    def doc_get(self, col, did):
+        snap = self.db.collection(col).document(did).get()
+        if not snap.exists:
+            raise FileNotFoundError(did)
+        return snap.to_dict()
+
+    def doc_put(self, col, did, doc):
+        self.db.collection(col).document(did).set(doc)
+
+    def doc_list(self, col):
+        return [s.to_dict() for s in self.db.collection(col).limit(500).stream()]
+
+    def doc_delete(self, col, did):
+        self.db.collection(col).document(did).delete()
+
     def add_cost(self, pid, row):
         self.col.document(pid).collection("costs").add(row)
         inc = self.fs.Increment
@@ -281,6 +319,33 @@ def scene(p: Project, sid):
         if s.id == sid:
             return s
     raise KeyError(sid)
+
+
+# voice profiles. Media (sample, clone prompt) is under vdir(id); the profile document is in the store.
+def vdir(vid) -> Path:
+    d = config.DATA / "voices" / vid
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def voice_list() -> list[VoiceProfile]:
+    return sorted((VoiceProfile.model_validate(d) for d in backend().doc_list("voices")), key=lambda v: (not v.builtin, v.created))
+
+
+def voice_get(vid) -> VoiceProfile:
+    return VoiceProfile.model_validate(backend().doc_get("voices", vid))
+
+
+def voice_save(v: VoiceProfile) -> VoiceProfile:
+    v.created = v.created or time.time()
+    backend().doc_put("voices", v.id, v.model_dump(mode="json"))
+    return v
+
+
+def voice_delete(vid):
+    backend().doc_delete("voices", vid)
+    import shutil
+    shutil.rmtree(config.DATA / "voices" / vid, ignore_errors=True)
 
 
 # cost ledger / spend counters (used by costs.py)

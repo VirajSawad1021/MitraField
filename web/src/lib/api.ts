@@ -20,7 +20,8 @@ export type Project = {
 }
 export type EngineInfo = { name: string; label: string; blurb: string; precise: boolean }
 export type LookInfo = { id: string; label: string; blurb: string }
-export type Meta = { locked?: boolean; looks?: LookInfo[]; engines: EngineInfo[]; voices: string[]; channel_voices: string[]; default_voice: string; models: Record<string, string> }
+export type VoiceProfile = { id: string; name: string; language: string; status: 'pending' | 'ready' | 'error'; error?: string | null; builtin: boolean }
+export type Meta = { locked?: boolean; looks?: LookInfo[]; engines: EngineInfo[]; voices: string[]; voice_profiles: Omit<VoiceProfile, 'language' | 'error'>[]; cloning: boolean; default_voice: string; models: Record<string, string> }
 export type ProjectRow = { id: string; title: string; topic: string; aspect: string; language: string; updated: number; render_status: string; scenes: number; cover: string | null; duration: number; engines: string[] }
 
 /* Public deployments ask for a passcode before anything that spends credits. */
@@ -50,7 +51,15 @@ const send = (m: string, u: string, b?: unknown) => {
   return j<Project>(go(), go)
 }
 
+const form = <T>(m: string, u: string, fd?: () => FormData) => {
+  const go = () => fetch(u, { method: m, headers: authHeaders(), body: fd?.() })
+  return j<T>(go(), go)
+}
+
 export const api = {
+  voices: () => j<VoiceProfile[]>(fetch('/api/voices')),
+  createVoice: (fd: () => FormData) => form<VoiceProfile>('POST', '/api/voices', fd),
+  deleteVoice: (id: string) => form<{ ok: boolean }>('DELETE', `/api/voices/${id}`),
   meta: () => j<Meta>(fetch('/api/meta')),
   list: () => j<ProjectRow[]>(fetch('/api/projects')),
   get: (id: string) => j<Project>(fetch(`/api/projects/${id}`)),
