@@ -10,301 +10,407 @@
     --ink: #141413; --body: #5b5a55; --muted: #8d8b84; --cream: #f4f3ef; --cream2: #ebe9e3;
     --panel: #f9f8f5; --line: #e9e7e1; --line2: #d8d5cc; --clay: #e8895a; --olive: #4a5a3f;
     --bronze: #855b2e; --good: #2f6b3a; --goodbg: #eaf3ea; --info: #33518a; --infobg: #ecf0f9;
+    --ai: #6b4f8a; --aibg: #efe7f6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--cream); color: var(--ink); font-family: Geist, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-  .slide { width: 1920px; height: 1080px; position: relative; overflow: hidden; page-break-after: always; padding: 96px 120px; background: var(--cream); }
+  .slide { width: 1920px; height: 1080px; position: relative; overflow: hidden; page-break-after: always; padding: 88px 120px; background: var(--cream); }
   .slide:last-child { page-break-after: auto; }
   .eyebrow { font-size: 20px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  h1 { font-size: 112px; font-weight: 500; letter-spacing: -.035em; line-height: 1.0; }
-  h2 { font-size: 68px; font-weight: 500; letter-spacing: -.03em; line-height: 1.06; }
+  .crit { display: inline-block; margin-left: 14px; padding: 4px 14px; border-radius: 999px; background: var(--infobg); color: var(--info); font-size: 16px; letter-spacing: .02em; text-transform: none; vertical-align: 2px; }
+  h1 { font-size: 104px; font-weight: 500; letter-spacing: -.035em; line-height: 1.0; }
+  h2 { font-size: 64px; font-weight: 500; letter-spacing: -.03em; line-height: 1.06; }
   h2 .soft, h1 .soft { color: #9b988f; }
-  h3 { font-size: 30px; font-weight: 600; letter-spacing: -.01em; }
-  p { font-size: 26px; line-height: 1.5; color: var(--body); }
-  .lead { font-size: 30px; line-height: 1.5; color: var(--body); max-width: 1100px; }
-  .mono { font-family: 'Geist Mono', monospace; }
+  h3 { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
+  p { font-size: 25px; line-height: 1.5; color: var(--body); }
+  .lead { font-size: 30px; line-height: 1.5; color: var(--body); max-width: 1180px; }
   .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 28px; }
   .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 16px; font-size: 18px; font-weight: 600; }
-  .exact { background: var(--goodbg); color: var(--good); }
-  .gen { background: #f1efea; color: var(--body); }
-  .foot { position: absolute; left: 120px; right: 120px; bottom: 48px; display: flex; justify-content: space-between; font-size: 18px; color: var(--muted); }
+  .ai { background: var(--aibg); color: var(--ai); }
+  .foot { position: absolute; left: 120px; right: 120px; bottom: 44px; display: flex; justify-content: space-between; font-size: 18px; color: var(--muted); }
   .logo { display: inline-flex; align-items: center; gap: 14px; font-size: 32px; font-weight: 600; letter-spacing: -.02em; }
   .mark { width: 48px; height: 48px; border-radius: 14px; display: block; }
   .grid { display: grid; gap: 28px; }
   .shot { width: 100%; display: block; border-radius: 18px; }
+  .frame { border: 1px solid var(--line); box-shadow: 0 40px 90px -50px rgba(20,20,19,.45); }
   .num { font-family: 'Geist Mono', monospace; font-size: 20px; color: var(--muted); }
-  .big { font-size: 96px; font-weight: 500; letter-spacing: -.04em; line-height: 1; }
+  .big { font-size: 88px; font-weight: 500; letter-spacing: -.04em; line-height: 1; }
   .row { display: flex; gap: 28px; align-items: center; }
-  .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
   table { border-collapse: collapse; width: 100%; }
-  td, th { text-align: left; padding: 22px 26px; border-bottom: 1px solid var(--line); font-size: 24px; vertical-align: top; }
-  th { font-size: 18px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; background: var(--panel); }
+  td, th { text-align: left; padding: 18px 24px; border-bottom: 1px solid var(--line); font-size: 22px; vertical-align: top; line-height: 1.4; }
+  th { font-size: 17px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; background: var(--panel); }
   tr:last-child td { border-bottom: 0; }
-  .arrow { color: var(--muted); font-size: 34px; }
-  .box { border: 1px solid var(--line2); border-radius: 20px; background: #fff; padding: 22px 26px; }
-  .box h4 { font-size: 24px; font-weight: 600; }
-  .box p { font-size: 19px; line-height: 1.4; margin-top: 6px; }
+  table.roomy td { font-size: 23px; padding: 21px 26px; }
+  .arrow { color: var(--muted); font-size: 34px; text-align: center; }
+  .box { border: 1px solid var(--line2); border-radius: 20px; background: #fff; padding: 20px 24px; }
+  .box h4 { font-size: 23px; font-weight: 600; }
+  .box p { font-size: 18px; line-height: 1.4; margin-top: 6px; }
   .tag { font-size: 16px; font-weight: 600; color: var(--bronze); text-transform: uppercase; letter-spacing: .06em; }
+  ul.ticks { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+  ul.ticks li { font-size: 26px; line-height: 1.4; color: var(--body); padding-left: 36px; position: relative; }
+  ul.ticks li::before { content: "✓"; position: absolute; left: 0; color: var(--good); font-weight: 700; }
+  .yes { color: var(--good); font-weight: 600; }
+  .no { color: var(--muted); }
 </style>
 </head>
 <body>
 
-<!-- 1. title -->
+<!-- 1. cover -->
 <section class="slide" style="padding:0">
   <img class="art" src="img/warm.webp">
-  <div style="position:absolute;inset:64px;background:rgba(255,255,255,.86);border-radius:36px;padding:88px 96px;display:flex;flex-direction:column;justify-content:space-between">
+  <div style="position:absolute;inset:64px;background:rgba(255,255,255,.88);border-radius:36px;padding:84px 96px;display:flex;flex-direction:column;justify-content:space-between">
     <div class="logo"><img class="mark" src="img/logo.png" alt="">mitrafield</div>
     <div>
-      <h1>Explain it once.<br>Every beat finds its engine.</h1>
-      <p class="lead" style="margin-top:36px">An AI director that writes explainer videos and sends every beat to the engine that can show it truthfully: exact math, real maps, charts and diagrams where accuracy matters, Veo and Nano Banana where mood does.</p>
+      <h1>Ask a question.<br>Get a narrated explainer video.</h1>
+      <p class="lead" style="margin-top:34px">MitraField is an AI studio that turns a question, a lesson plan or a PDF into a finished explainer video: a script, the right picture for every scene, narration in your own cloned voice, music and subtitles. Numbers, maps and math are drawn from real data, so the video is correct, not just pretty.</p>
     </div>
-    <div class="row" style="justify-content:space-between;font-size:22px;color:var(--body)">
-      <span>Google Cloud AI Builder Cup 2026 · Theme: <b style="color:var(--ink)">Media, Content &amp; Digital Experiences</b></span>
-      <span>Viraj Sawad · Gaurav Giri · The Mitra Team · github.com/VirajSawad1021/MitraField</span>
+    <div class="row" style="justify-content:space-between;align-items:flex-end;font-size:22px;color:var(--body)">
+      <div style="line-height:1.6">Google Cloud AI Builder Cup 2026<br>Theme: <b style="color:var(--ink)">Media, Content &amp; Digital Experiences</b></div>
+      <div style="text-align:right;line-height:1.6">Viraj Sawad · Gaurav Giri · The Mitra Team<br>Live: <b style="color:var(--ink)">mitrafield-aibc26.web.app</b> · github.com/VirajSawad1021/MitraField</div>
     </div>
   </div>
 </section>
 
-<!-- 2. problem -->
+<!-- 2. summary for judges -->
 <section class="slide">
-  <p class="eyebrow">The problem</p>
-  <h2 style="margin-top:20px;max-width:1500px">Explainer videos are how the world learns.<br><span class="soft">Making a correct one is still slow, expensive and manual.</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:72px">
-    <div class="card" style="padding:44px">
+  <p class="eyebrow">MitraField in one page</p>
+  <h2 style="margin-top:18px">What it is, and how it meets each judging criterion.</h2>
+  <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:24px;margin-top:48px">
+    <div class="card" style="padding:36px"><p class="tag">Technical merit &amp; Gen AI · 40%</p><h3 style="margin-top:12px">Google AI models working as a team</h3><p style="margin-top:10px;font-size:22px">Gemini writes, plans, codes, reviews and fact-checks; Nano Banana, Veo, Gemini TTS and Lyria make the media. Every step checks the one before it. Deployed on Cloud Run with a durable job queue, a GPU voice service and automatic, gated releases.</p></div>
+    <div class="card" style="padding:36px"><p class="tag">Problem alignment &amp; impact · 25%</p><h3 style="margin-top:12px">Correct explainers in minutes, in many languages</h3><p style="margin-top:10px;font-size:22px">A good explainer takes a studio days. AI video tools are fast but get facts wrong. MitraField makes a correct, narrated video in minutes for about one to three dollars, and translates it in one click, for teachers, NGOs, newsrooms and creators.</p></div>
+    <div class="card" style="padding:36px"><p class="tag">Innovation &amp; creativity · 25%</p><h3 style="margin-top:12px">The right kind of picture for every scene</h3><p style="margin-top:10px;font-size:22px">Instead of one video model for everything, an AI director picks one of eleven kinds of visual per scene: real math animation, real maps, charts, timelines, or AI imagery only where it helps. Plus your own cloned voice and an invisible watermark anyone can verify.</p></div>
+    <div class="card" style="padding:36px"><p class="tag">User experience &amp; design · 10%</p><h3 style="margin-top:12px">You approve the plan; change any scene in plain words</h3><p style="margin-top:10px;font-size:22px">Nothing is spent until you approve the storyboard. Every screen has one clear next step, any scene can be changed by asking ("make it simpler"), AI pictures are labelled, cost is shown per video, and it works on a phone.</p></div>
+  </div>
+  <div class="foot"><span>MitraField · live at mitrafield-aibc26.web.app</span><span>2</span></div>
+</section>
+
+<!-- 3. problem -->
+<section class="slide">
+  <p class="eyebrow">The problem <span class="crit">Problem alignment</span></p>
+  <h2 style="margin-top:18px;max-width:1550px">Video is how people learn now.<br><span class="soft">Making a correct explainer is still slow, costly and English-only.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:80px">
+    <div class="card" style="padding:48px 44px">
       <div class="big">days</div>
-      <h3 style="margin-top:28px">of work per minute</h3>
-      <p style="margin-top:12px;font-size:23px">A good explainer needs a script, research, animation, maps, charts, narration and editing. Teachers, NGOs and small creators cannot afford a studio.</p>
+      <h3 style="margin-top:24px">of work per minute of video</h3>
+      <p style="margin-top:14px;font-size:24px">Script, research, animation, maps, charts, narration and editing. Teachers, NGOs and small creators cannot afford a studio or an editor.</p>
     </div>
-    <div class="card" style="padding:44px">
+    <div class="card" style="padding:42px">
       <div class="big">wrong</div>
-      <h3 style="margin-top:28px">numbers drawn by pixels</h3>
-      <p style="margin-top:12px;font-size:23px">Text-to-video tools make beautiful clips, but they hallucinate. Coastlines are invented, figures are garbled, equations are squiggles. For learning, a wrong number is worse than none.</p>
+      <h3 style="margin-top:24px">facts from AI video tools</h3>
+      <p style="margin-top:14px;font-size:24px">Text-to-video models make beautiful clips but invent coastlines, garble numbers and draw equations as squiggles. In a lesson, a wrong number is worse than no video.</p>
     </div>
-    <div class="card" style="padding:44px">
+    <div class="card" style="padding:42px">
       <div class="big">one</div>
-      <h3 style="margin-top:28px">language, one format</h3>
-      <p style="margin-top:12px;font-size:23px">Most explainers exist only in English and only as long-form. Re-making them as Shorts or in Hindi, Nepali or Bahasa means starting again.</p>
+      <h3 style="margin-top:24px">language, one format</h3>
+      <p style="margin-top:14px;font-size:24px">Most explainers exist only in English and only long-form. A Hindi, Nepali or Bahasa version, or a vertical Short, means starting again.</p>
     </div>
-  </div>
-  <div class="foot"><span>MitraField</span><span>2</span></div>
-</section>
-
-<!-- 3. solution -->
-<section class="slide">
-  <p class="eyebrow">The solution</p>
-  <h2 style="margin-top:20px">A director agent with eleven engines and ten looks.<br><span class="soft">Precise where it matters, generative where it helps.</span></h2>
-  <div class="grid" style="grid-template-columns:1.05fr 1fr;margin-top:64px;align-items:start">
-    <div>
-      <p style="font-size:27px">You ask a question and add notes or PDFs. Gemini writes a storyboard for the ear, beat by beat, and routes each beat to the engine that can show it truthfully. Every beat is rendered to the exact length of its narration, checked, and assembled into a finished video with music and subtitles.</p>
-      <div style="margin-top:40px;display:flex;flex-direction:column;gap:18px">
-        <div class="row" style="gap:18px"><span class="pill exact">exact</span><span style="font-size:24px">Motion scene · Math animation · Globe &amp; maps · Data chart · Timeline · Flow diagram · Whiteboard · Kinetic type</span></div>
-        <div class="row" style="gap:18px"><span class="pill gen">generated</span><span style="font-size:24px">Cinematic shots · Presenter · Veo video</span></div>
-      </div>
-      <p style="margin-top:40px;font-size:24px">Facts, numbers, maps and math are always drawn by code from real data. Ten looks (Cinematic, Editorial flat, Premium 3D, Ink &amp; wash, Motion graphics, Archival, Woodblock, Paper collage, Isometric, Blueprint) restyle every engine at once.</p>
-    </div>
-    <img class="shot" src="img/studio_cast.png" style="border:1px solid var(--line);box-shadow:0 40px 90px -50px rgba(20,20,19,.45)">
   </div>
   <div class="foot"><span>MitraField</span><span>3</span></div>
 </section>
 
-<!-- 4. engines -->
-<section class="slide" style="padding-top:80px">
-  <p class="eyebrow">Eleven engines, one contract</p>
-  <h2 style="margin-top:16px;font-size:58px">Every engine plans a beat and renders it to the exact length.</h2>
-  <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:20px;margin-top:44px">
-    <div><img class="shot" src="img/manim.jpg"><h4 style="font-size:22px;margin-top:12px">Math animation</h4><p style="font-size:17px">Gemini writes Manim code, repairs errors, checks frames</p></div>
-    <div><img class="shot" src="img/globe.jpg"><h4 style="font-size:22px;margin-top:12px">Globe &amp; maps</h4><p style="font-size:17px">Natural Earth borders, flights, pins, routes</p></div>
-    <div><img class="shot" src="img/chart.jpg"><h4 style="font-size:22px;margin-top:12px">Data chart</h4><p style="font-size:17px">Bars and trends from source numbers</p></div>
-    <div><img class="shot" src="img/timeline.jpg"><h4 style="font-size:22px;margin-top:12px">Timeline</h4><p style="font-size:17px">Events at their real dates</p></div>
-    <div><img class="shot" src="img/flow.jpg"><h4 style="font-size:22px;margin-top:12px">Flow diagram</h4><p style="font-size:17px">Processes, cycles, trees</p></div>
-    <div><img class="shot" src="img/whiteboard.jpg"><h4 style="font-size:22px;margin-top:12px">Whiteboard</h4><p style="font-size:17px">Line art drawn on stroke by stroke</p></div>
-    <div><img class="shot" src="img/title.jpg"><h4 style="font-size:22px;margin-top:12px">Kinetic type</h4><p style="font-size:17px">Hooks and key numbers</p></div>
-    <div><img class="shot" src="img/image.jpg"><h4 style="font-size:22px;margin-top:12px">Cinematic shots</h4><p style="font-size:17px">Photographic stills in one grade</p></div>
-    <div><img class="shot" src="img/character.jpg"><h4 style="font-size:22px;margin-top:12px">Presenter</h4><p style="font-size:17px">One real-looking person, same face every beat</p></div>
-    <div><img class="shot" src="img/veo.jpg"><h4 style="font-size:22px;margin-top:12px">Veo shots</h4><p style="font-size:17px">Hero motion, max two per video</p></div>
-  </div>
-  <div class="foot"><span>MitraField · a new visual style is one file in backend/engines</span><span>4</span></div>
-</section>
-
-<!-- 4b. looks -->
-<section class="slide" style="padding-top:80px">
-  <p class="eyebrow">Ten looks</p>
-  <h2 style="margin-top:16px;font-size:58px">One story, ten looks. <span class="soft">Professional in every one.</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:18px;margin-top:40px">
-    <div><img class="shot" src="img/look_cinematic.jpg"><h4 style="font-size:21px;margin-top:10px">Cinematic</h4></div>
-    <div><img class="shot" src="img/look_editorial.jpg"><h4 style="font-size:21px;margin-top:10px">Editorial flat</h4></div>
-    <div><img class="shot" src="img/look_studio3d.jpg"><h4 style="font-size:21px;margin-top:10px">Premium 3D</h4></div>
-    <div><img class="shot" src="img/look_ink.jpg"><h4 style="font-size:21px;margin-top:10px">Ink &amp; wash</h4></div>
-    <div><img class="shot" src="img/look_motion.jpg"><h4 style="font-size:21px;margin-top:10px">Motion graphics</h4></div>
-    <div><img class="shot" src="img/look_archival.jpg"><h4 style="font-size:21px;margin-top:10px">Archival</h4></div>
-    <div><img class="shot" src="img/look_woodblock.jpg"><h4 style="font-size:21px;margin-top:10px">Woodblock</h4></div>
-    <div><img class="shot" src="img/look_collage.jpg"><h4 style="font-size:21px;margin-top:10px">Paper collage</h4></div>
-    <div><img class="shot" src="img/look_isometric.jpg"><h4 style="font-size:21px;margin-top:10px">Isometric</h4></div>
-    <div><img class="shot" src="img/look_blueprint.jpg"><h4 style="font-size:21px;margin-top:10px">Blueprint</h4></div>
-  </div>
-  <p style="margin-top:34px;font-size:22px">A look sets the style of every generated image and its character rules, and gives code-drawn engines its palette and paper texture, so the whole video matches. Same subject shown in each.</p>
-  <div class="foot"><span>MitraField</span><span>4b</span></div>
-</section>
-
-<!-- 5. how it works -->
+<!-- 4. who it is for -->
 <section class="slide">
-  <p class="eyebrow">How it works</p>
-  <h2 style="margin-top:20px">From a question to a finished video.<br><span class="soft">You only make the calls.</span></h2>
-  <div class="card" style="margin-top:56px;overflow:hidden">
-    <table>
-      <tr><td class="num" style="width:80px">01</td><td style="width:330px"><b>Ask</b></td><td style="width:260px" class="tag">You</td><td>A question plus optional notes, PDFs or images. Format, length, language, narrator, audience.</td></tr>
-      <tr><td class="num">02</td><td><b>Storyboard + cast</b></td><td class="tag">Gemini 3.1 Pro</td><td>Narration beat by beat, an engine per beat, and the recurring cast: style, characters, objects, places.</td></tr>
-      <tr><td class="num">03</td><td><b>Narrate</b></td><td class="tag">Gemini TTS</td><td>Each line is voiced first, then transcribed and retaken if it drifts from the script.</td></tr>
-      <tr><td class="num">04</td><td><b>Render + self-check</b></td><td class="tag">Engines</td><td>Beats render in parallel to their exact length. Manim code is repaired on error and inspected by Gemini vision.</td></tr>
-      <tr><td class="num">05</td><td><b>Edit one beat</b></td><td class="tag">You + director</td><td>Rewrite a line, swap an engine, or say "show it on a map". Only that beat re-renders.</td></tr>
-      <tr><td class="num">06</td><td><b>Assemble + translate</b></td><td class="tag">Lyria · ffmpeg</td><td>Music ducked under the voice, -14 LUFS, subtitles. One-click versions in other languages reuse the visuals.</td></tr>
-    </table>
+  <p class="eyebrow">Who it is for <span class="crit">Potential impact</span></p>
+  <h2 style="margin-top:18px">Correct explainers for anyone who teaches.<br><span class="soft">In their language, in their format.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:60px">
+    <div class="card" style="padding:42px"><h3>Teachers and schools</h3><p style="margin-top:14px;font-size:22px">Paste a lesson plan, get a narrated video with accurate diagrams, then a vertical Short for revision. One teacher, minutes, a few dollars.</p></div>
+    <div class="card" style="padding:42px"><h3>NGOs and newsrooms</h3><p style="margin-top:14px;font-size:22px">Explain a policy, a disease or a crisis with real maps and checked numbers, and publish it in several JAPAC languages the same day.</p></div>
+    <div class="card" style="padding:42px"><h3>Creators and educators online</h3><p style="margin-top:14px;font-size:22px">Run an explainer channel in your own voice, with the same presenter and style in every episode, long-form and Shorts from one place.</p></div>
   </div>
-  <div class="foot"><span>MitraField</span><span>5</span></div>
+  <div class="card" style="margin-top:32px;padding:30px 42px;display:flex;gap:56px">
+    <p style="font-size:22px"><b style="color:var(--ink)">Against misinformation:</b> every number, map and equation is computed from data the user can see, then fact-checked against their sources and Google Search.</p>
+    <p style="font-size:22px"><b style="color:var(--ink)">Nine narration languages:</b> English, Hindi, Nepali, Japanese, Indonesian, Korean, Spanish, Tamil and Vietnamese.</p>
+  </div>
+  <div class="foot"><span>MitraField</span><span>4</span></div>
 </section>
 
-<!-- 6. cast & sets -->
+<!-- 5. the product -->
 <section class="slide">
-  <p class="eyebrow">Consistency: Cast &amp; Sets</p>
-  <h2 style="margin-top:20px">Define it once. <span class="soft">The same ship in every shot.</span></h2>
-  <div class="grid" style="grid-template-columns:0.8fr 2.2fr;margin-top:56px;gap:48px">
-    <div style="display:flex;flex-direction:column;gap:20px">
-      <p style="font-size:24px">The director defines the recurring ingredients with the storyboard. Each gets one reference image; every generated beat is drawn from the references it contains, and Veo animates an on-model first frame.</p>
-      <div class="row" style="gap:16px"><img src="img/cast_object.jpg" style="width:120px;height:120px;object-fit:cover;border-radius:18px"><div><b style="font-size:24px">RMS Titanic</b><p style="font-size:19px">object · black hull, white decks, four buff funnels</p></div></div>
-      <div class="row" style="gap:16px"><img src="img/cast_character.jpg" style="width:120px;height:120px;object-fit:cover;border-radius:18px"><div><b style="font-size:24px">Thomas</b><p style="font-size:19px">presenter · 1912 Harland and Wolff shipbuilder</p></div></div>
-      <div class="row" style="gap:16px"><img src="img/cast_style.jpg" style="width:120px;height:120px;object-fit:cover;border-radius:18px"><div><b style="font-size:24px">Moody historical realism</b><p style="font-size:19px">style · applied to every generated beat</p></div></div>
-    </div>
-    <div class="grid" style="grid-template-columns:1fr 1fr;gap:20px">
-      <div><img class="shot" src="img/tit_1_image.jpg" style="height:285px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Beat 1 · illustrated still</p></div>
-      <div><img class="shot" src="img/tit_2_veo.jpg" style="height:285px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Beat 3 · Veo video</p></div>
-      <div><img class="shot" src="img/tit_3_veo.jpg" style="height:285px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Beat 7 · Veo video</p></div>
-      <div><img class="shot" src="img/tit_char.jpg" style="height:285px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Beat 5 · presenter</p></div>
-    </div>
+  <p class="eyebrow">The solution</p>
+  <h2 style="margin-top:18px;font-size:58px">One workspace from a question to a finished video.</h2>
+  <div class="grid" style="grid-template-columns:0.82fr 1.18fr;margin-top:44px;align-items:start;gap:48px">
+    <ul class="ticks" style="margin-top:8px">
+      <li><b style="color:var(--ink)">Ask</b> a question, or paste notes, a lesson plan or a PDF.</li>
+      <li><b style="color:var(--ink)">Review the storyboard</b> the AI director writes: the script, scene by scene, and the picture chosen for each one. Nothing is spent before you approve.</li>
+      <li><b style="color:var(--ink)">Render</b>: every scene is narrated and drawn to the exact length of its sentence, then checked for quality and facts.</li>
+      <li><b style="color:var(--ink)">Change any scene</b> by editing it or asking: "simpler", "show it on a map". Only that scene is redone.</li>
+      <li><b style="color:var(--ink)">Download</b> an MP4 with music and subtitles, or make a Hindi or Nepali version in one click.</li>
+    </ul>
+    <img class="shot frame" src="img/ui_studio.png">
   </div>
-  <div class="foot"><span>MitraField · "Why did the Titanic sink?", one prompt, no manual edits</span><span>6</span></div>
+  <div class="foot"><span>MitraField · the studio for a finished video: one next step (Download), each scene editable, AI pictures labelled</span><span>5</span></div>
 </section>
 
-<!-- 7. architecture -->
-<section class="slide">
-  <p class="eyebrow">Architecture on Google Cloud</p>
-  <h2 style="margin-top:20px;font-size:58px">Stateless API, durable jobs, a GPU voice that scales to zero.</h2>
-  <div style="margin-top:46px;display:grid;grid-template-columns:1fr 50px 1.25fr 50px 1.15fr;align-items:center">
+<!-- 6. right visual -->
+<section class="slide" style="padding-top:76px">
+  <p class="eyebrow">The core idea <span class="crit">Innovation</span></p>
+  <h2 style="margin-top:14px;font-size:56px">The right kind of picture for every scene. <span class="soft">Real data where facts matter.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:20px;margin-top:38px">
+    <div><img class="shot" src="img/manim.jpg"><h4 style="font-size:21px;margin-top:10px">Math animation</h4><p style="font-size:16px">Real equations and graphs, drawn by code</p></div>
+    <div><img class="shot" src="img/globe.jpg"><h4 style="font-size:21px;margin-top:10px">Globe &amp; maps</h4><p style="font-size:16px">Real country borders, routes and pins</p></div>
+    <div><img class="shot" src="img/chart.jpg"><h4 style="font-size:21px;margin-top:10px">Data chart</h4><p style="font-size:16px">Bars and trends from your numbers</p></div>
+    <div><img class="shot" src="img/timeline.jpg"><h4 style="font-size:21px;margin-top:10px">Timeline</h4><p style="font-size:16px">Events placed at their real dates</p></div>
+    <div><img class="shot" src="img/flow.jpg"><h4 style="font-size:21px;margin-top:10px">Flow diagram</h4><p style="font-size:16px">Steps, cycles and cause and effect</p></div>
+    <div><img class="shot" src="img/whiteboard.jpg"><h4 style="font-size:21px;margin-top:10px">Whiteboard</h4><p style="font-size:16px">A sketch drawn stroke by stroke</p></div>
+    <div><img class="shot" src="img/title.jpg"><h4 style="font-size:21px;margin-top:10px">Animated text</h4><p style="font-size:16px">Key numbers and definitions</p></div>
+    <div><img class="shot" src="img/image.jpg"><h4 style="font-size:21px;margin-top:10px">Cinematic shot <span class="pill ai" style="font-size:12px;padding:2px 8px">AI</span></h4><p style="font-size:16px">Places, history, metaphor</p></div>
+    <div><img class="shot" src="img/character.jpg"><h4 style="font-size:21px;margin-top:10px">Presenter <span class="pill ai" style="font-size:12px;padding:2px 8px">AI</span></h4><p style="font-size:16px">One person, same face every time</p></div>
+    <div><img class="shot" src="img/veo.jpg"><h4 style="font-size:21px;margin-top:10px">Video clip (Veo) <span class="pill ai" style="font-size:12px;padding:2px 8px">AI</span></h4><p style="font-size:16px">Real motion, at most two per video</p></div>
+  </div>
+  <p style="margin-top:28px;font-size:21px">Eleven kinds of visual (an animated illustration is the eleventh). The director picks one per scene. Only the three marked <span class="pill ai" style="font-size:15px;padding:2px 10px">AI</span> are generated pictures, and the app labels them "AI-generated" on every scene. In our 12 finished videos, 62% of scenes were drawn from data and code.</p>
+  <div class="foot"><span>MitraField</span><span>6</span></div>
+</section>
+
+<!-- 7. looks + consistency -->
+<section class="slide" style="padding-top:76px">
+  <p class="eyebrow">Style and consistency <span class="crit">Creativity</span></p>
+  <h2 style="margin-top:14px;font-size:56px">Ten looks. <span class="soft">The same ship, and the same person, in every shot.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:16px;margin-top:34px">
+    <div><img class="shot" src="img/look_cinematic.jpg"><p style="font-size:17px;margin-top:6px;color:var(--ink)">Cinematic</p></div>
+    <div><img class="shot" src="img/look_editorial.jpg"><p style="font-size:17px;margin-top:6px;color:var(--ink)">Editorial flat</p></div>
+    <div><img class="shot" src="img/look_studio3d.jpg"><p style="font-size:17px;margin-top:6px;color:var(--ink)">Premium 3D</p></div>
+    <div><img class="shot" src="img/look_ink.jpg"><p style="font-size:17px;margin-top:6px;color:var(--ink)">Ink &amp; wash</p></div>
+    <div><img class="shot" src="img/look_woodblock.jpg"><p style="font-size:17px;margin-top:6px;color:var(--ink)">Woodblock, and 5 more</p></div>
+  </div>
+  <div class="grid" style="grid-template-columns:0.9fr 2.1fr;gap:40px;margin-top:34px;align-items:center">
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="box"><h4>Firebase Hosting</h4><p>CDN for the Next.js workspace, security headers, routes /api to Cloud Run</p></div>
-      <div class="box"><h4>Cloud Run: API</h4><p>Public, stateless, scales to zero. Passcode, spend caps ($25/day, $5/video), enqueues jobs, never renders</p></div>
+      <p style="font-size:21px">With the storyboard, the director defines the recurring characters, objects and places. Each gets one reference image, and every AI picture and Veo clip is drawn from it.</p>
+      <div class="row" style="gap:14px"><img src="img/cast_object.jpg" style="width:92px;height:92px;object-fit:cover;border-radius:16px"><div><b style="font-size:21px">RMS Titanic</b><p style="font-size:17px">object, defined once</p></div></div>
+      <div class="row" style="gap:14px"><img src="img/cast_character.jpg" style="width:92px;height:92px;object-fit:cover;border-radius:16px"><div><b style="font-size:21px">Thomas, the presenter</b><p style="font-size:17px">a 1912 shipbuilder</p></div></div>
     </div>
-    <div class="arrow" style="text-align:center">→</div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="box" style="border-color:var(--ink)"><h4>Cloud Tasks</h4><p>Durable queue: retries, backoff, rate limit; jobs survive deploys and restarts</p></div>
-      <div class="box" style="border-color:var(--ink)"><h4>Cloud Run: worker (private)</h4><p>One job per instance, up to 6 in parallel. Directs, narrates, renders one beat each, assembles, runs QA and fact checks. Model-written code runs in a sandbox</p></div>
-      <div class="box"><h4>Firestore · Cloud Storage · Secret Manager</h4><p>Project state with transactions (assembly runs exactly once) · media bucket · API keys</p></div>
-    </div>
-    <div class="arrow" style="text-align:center">→</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Gemini 3.1 Pro + Flash</h4><p style="font-size:15px">director, code, vision QA, fact check with Google Search</p></div>
-      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Nano Banana · Veo 3.1</h4><p style="font-size:15px">stills, cast references, hero video</p></div>
-      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Gemini TTS · Lyria</h4><p style="font-size:15px">narration fallback, music bed</p></div>
-      <div class="box" style="padding:13px 20px"><h4 style="font-size:20px">Cloud Run GPU (L4)</h4><p style="font-size:15px">OmniVoice cloned narrators, scales to zero</p></div>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:16px">
+      <div><img class="shot" src="img/tit_1_image.jpg" style="height:300px;object-fit:cover"><p style="font-size:16px;margin-top:6px">Scene 1 · still</p></div>
+      <div><img class="shot" src="img/tit_2_veo.jpg" style="height:300px;object-fit:cover"><p style="font-size:16px;margin-top:6px">Scene 3 · Veo clip</p></div>
+      <div><img class="shot" src="img/tit_3_veo.jpg" style="height:300px;object-fit:cover"><p style="font-size:16px;margin-top:6px">Scene 7 · Veo clip</p></div>
     </div>
   </div>
-  <p style="margin-top:34px;font-size:21px">Every push to main runs lint, 104 tests (including the Firestore emulator), the web build and the image build, then a gated canary deploy.</p>
-  <div class="foot"><span>MitraField · live at mitrafield-aibc26.web.app</span><span>7</span></div>
+  <div class="foot"><span>MitraField · "Why did the Titanic sink?", one prompt, no manual edits. A look restyles every picture, chart and map at once.</span><span>7</span></div>
 </section>
 
-<!-- 7b. trust -->
+<!-- 8. voice cloning -->
 <section class="slide">
-  <p class="eyebrow">Trust and safety</p>
-  <h2 style="margin-top:20px">Every video checks itself <span class="soft">before you see it.</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:24px;margin-top:52px">
-    <div class="card" style="padding:34px"><h3 style="font-size:26px">Quality check</h3><p style="margin-top:12px;font-size:20px">After every render: ffmpeg checks length, black or frozen frames, silence and loudness, a contact sheet is saved, and Gemini reviews every beat for cut-off text, garbled words in images and off-model characters. One click fixes a flagged beat.</p></div>
-    <div class="card" style="padding:34px"><h3 style="font-size:26px">Fact-check agent</h3><p style="margin-top:12px;font-size:20px">Every number and claim, in the narration and on screen, is checked against the user's sources first, then Google Search, with citations. Contradicted claims are flagged with a correction the director can apply.</p></div>
-    <div class="card" style="padding:34px"><h3 style="font-size:26px">No deepfakes</h3><p style="margin-top:12px;font-size:20px">Requests to put words in a real person's mouth are refused. Every image and video prompt is screened: real people become anonymous stand-ins, and video of a real person is never generated.</p></div>
-    <div class="card" style="padding:34px"><h3 style="font-size:26px">Prompt-injection guard</h3><p style="margin-top:12px;font-size:20px">Uploaded PDFs and notes are fenced off as data. A test note that said "ignore all previous instructions" and tried to turn the video into a crypto ad was ignored, while its real facts were used.</p></div>
-    <div class="card" style="padding:34px"><h3 style="font-size:26px">Spend control</h3><p style="margin-top:12px;font-size:20px">Every model call is priced and logged per video. Hard caps of $25 a day and $5 a video, a passcode on anything that spends, and a cheaper draft mode.</p></div>
-    <div class="card" style="padding:34px"><h3 style="font-size:26px">Sandboxed code</h3><p style="margin-top:12px;font-size:20px">Manim code written by the model runs in a sandbox without network access, and motion scenes render offline in headless Chrome.</p></div>
+  <p class="eyebrow">Voice cloning <span class="crit">Innovation</span></p>
+  <h2 style="margin-top:18px">Narrated in your own voice.<br><span class="soft">Recorded once, in about 15 seconds.</span></h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:56px;margin-top:52px;align-items:start">
+    <div>
+      <ul class="ticks">
+        <li>Record or upload 3 to 20 seconds of clear speech on the Voices page. Gemini transcribes it if you do not type what you said.</li>
+        <li>The voice is cloned once with OmniVoice, an open model we run on a Cloud Run GPU (NVIDIA L4) that switches off when nobody is using it.</li>
+        <li>The same voice narrates every video, including translations: our Hindi demo is narrated by the same cloned voice as the English one.</li>
+        <li>Consent is required: the person confirms the voice is theirs or used with their permission, and samples are never public.</li>
+        <li>If the GPU is unavailable, narration falls back to a Gemini voice, so a video never fails because of it.</li>
+      </ul>
+    </div>
+    <div>
+      <img class="shot frame" src="img/ui_narrator.png">
+      <p style="margin-top:18px;font-size:20px">Choosing a narrator: the cloned voices come first, with "Clone your voice" one click away. Gemini voices remain an option for more languages.</p>
+    </div>
   </div>
-  <div class="foot"><span>MitraField</span><span>7b</span></div>
-</section>
-
-<!-- 8. agentic depth -->
-<section class="slide">
-  <p class="eyebrow">Gen AI implementation</p>
-  <h2 style="margin-top:20px">Not one prompt. <span class="soft">Seven loops that check each other.</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:20px;margin-top:52px">
-    <div class="card" style="padding:32px"><div class="num">01</div><h3 style="margin-top:18px;font-size:26px">Route</h3><p style="font-size:20px;margin-top:10px">The director reads every engine's description and picks per beat, under rules: facts go to exact engines, Veo is capped at two.</p></div>
-    <div class="card" style="padding:32px"><div class="num">02</div><h3 style="margin-top:18px;font-size:26px">Code + repair</h3><p style="font-size:20px;margin-top:10px">Gemini writes Manim for the exact duration. Render errors go back with the traceback until it compiles.</p></div>
-    <div class="card" style="padding:32px"><div class="num">03</div><h3 style="margin-top:18px;font-size:26px">Look + fix</h3><p style="font-size:20px;margin-top:10px">Gemini vision inspects rendered frames for overlapping or cut-off text and asks for a corrected scene.</p></div>
-    <div class="card" style="padding:32px"><div class="num">04</div><h3 style="margin-top:18px;font-size:26px">Listen + retake</h3><p style="font-size:20px;margin-top:10px">Every narration line is transcribed and retaken if words were added, dropped or garbled.</p></div>
-    <div class="card" style="padding:32px"><div class="num">05</div><h3 style="margin-top:18px;font-size:26px">Stay on model</h3><p style="font-size:20px;margin-top:10px">Cast references feed every image and Veo first frame, so characters and subjects stay consistent.</p></div>
-    <div class="card" style="padding:32px"><div class="num">06</div><h3 style="margin-top:18px;font-size:26px">Review the cut</h3><p style="font-size:20px;margin-top:10px">After assembly Gemini reviews every beat of the finished video and ffmpeg checks picture and sound; a flagged beat is fixed in one click.</p></div>
-    <div class="card" style="padding:32px"><div class="num">07</div><h3 style="margin-top:18px;font-size:26px">Check the facts</h3><p style="font-size:20px;margin-top:10px">Claims are verified against the sources and Google Search; contradicted ones come back to the director with the evidence.</p></div>
-  </div>
-  <p style="margin-top:56px;font-size:24px">Failures degrade gracefully: a refused Veo clip becomes a still, a failed engine becomes a title card, and the video still renders.</p>
   <div class="foot"><span>MitraField</span><span>8</span></div>
 </section>
 
-<!-- 9. results -->
+<!-- 9. Google AI -->
 <section class="slide">
-  <p class="eyebrow">Results from the prototype</p>
-  <h2 style="margin-top:20px">Finished explainers from a single prompt.</h2>
-  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:56px;gap:24px">
-    <div class="card" style="padding:36px"><div class="big">10</div><p style="margin-top:14px;font-size:21px">finished videos: geography, math, biology, history, tech, anatomy and earth science, in 3 looks and 3 languages</p></div>
-    <div class="card" style="padding:36px"><div class="big">2-9<span style="font-size:40px"> min</span></div><p style="margin-top:14px;font-size:21px">to render a 45-60 s video, unattended, no manual edits</p></div>
-    <div class="card" style="padding:36px"><div class="big" style="font-size:72px">$0.72-1.70</div><p style="margin-top:14px;font-size:21px">measured API cost per video, logged per call; a translation that reuses the shots cost $0.34</p></div>
-    <div class="card" style="padding:36px"><div class="big">56%</div><p style="margin-top:14px;font-size:21px">of all beats rendered by exact engines, so facts are computed, not generated</p></div>
+  <p class="eyebrow">How Google AI is used <span class="crit">Technical merit · meaningful use of Gen AI</span></p>
+  <h2 style="margin-top:18px;font-size:58px">Each model does the job it is best at.</h2>
+  <div class="card" style="margin-top:40px;overflow:hidden">
+    <table>
+      <tr><th style="width:420px">Job</th><th style="width:420px">Google model</th><th>What it does in MitraField</th></tr>
+      <tr><td><b>Director</b></td><td>Gemini 3.1 Pro</td><td>Reads the question and sources, writes the script scene by scene, picks the visual for each scene, defines the characters and places.</td></tr>
+      <tr><td><b>Code and planning</b></td><td>Gemini 3.5 Flash</td><td>Writes the math-animation code, fills in maps, charts and timelines from the sources, rewrites one scene on request.</td></tr>
+      <tr><td><b>Pictures</b></td><td>Nano Banana (Gemini 3.1 Flash Image)</td><td>Character and place references, cinematic stills, whiteboard sketches, all drawn in the chosen look.</td></tr>
+      <tr><td><b>Video</b></td><td>Veo 3.1 Fast (Veo 3.1 Lite for drafts)</td><td>At most two hero clips per video, starting from an on-model first frame.</td></tr>
+      <tr><td><b>Narration and music</b></td><td>Gemini TTS · Lyria 3</td><td>Gemini voices in nine languages (cloned voices run on our GPU service); a music bed made for the topic, kept low under the voice.</td></tr>
+      <tr><td><b>Checking</b></td><td>Gemini with Google Search grounding</td><td>Reviews the frames of every finished scene and checks every claim against the sources and Google Search, with links.</td></tr>
+    </table>
   </div>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:30px;gap:20px">
-    <div><img class="shot" src="img/res_tsunami.jpg" style="height:250px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Woodblock look · tsunami</p></div>
-    <div><img class="shot" src="img/res_vaccine.jpg" style="height:250px;object-fit:cover;object-position:center 30%"><p style="font-size:18px;margin-top:8px">Editorial flat · vaccine Short with a cast presenter</p></div>
-    <div><img class="shot" src="img/res_hindi.jpg" style="height:250px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Hindi translation · labels re-rendered in Devanagari</p></div>
-  </div>
-  <div class="foot"><span>MitraField · costs from Google's published Gemini API rates, logged per call</span><span>9</span></div>
+  <div class="foot"><span>MitraField · all calls through the Gemini API, key held in Secret Manager; one switch moves them to Vertex AI</span><span>9</span></div>
 </section>
 
-<!-- 10. impact -->
+<!-- 10. checking loops -->
 <section class="slide">
-  <p class="eyebrow">Impact</p>
-  <h2 style="margin-top:20px">Correct explainers for everyone who teaches.<br><span class="soft">In their language, in their format.</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:64px">
-    <div class="card" style="padding:44px"><h3>Teachers and schools</h3><p style="margin-top:14px;font-size:23px">Turn a lesson plan into a narrated video with accurate diagrams, then into a Short for revision. One teacher, minutes, a few dollars.</p></div>
-    <div class="card" style="padding:44px"><h3>NGOs and newsrooms</h3><p style="margin-top:14px;font-size:23px">Explain a policy, a disease or a crisis with real maps and real numbers, cited on screen, and publish it in several JAPAC languages the same day.</p></div>
-    <div class="card" style="padding:44px"><h3>Creators</h3><p style="margin-top:14px;font-size:23px">Run an explainer channel with a consistent presenter and style across every episode, long-form and Shorts from one workspace.</p></div>
+  <p class="eyebrow">Not one prompt <span class="crit">Technical merit · implementation</span></p>
+  <h2 style="margin-top:18px">Seven steps that check each other.</h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px">
+    <div class="card" style="padding:30px"><div class="num">01</div><h3 style="margin-top:16px;font-size:25px">Choose the visual</h3><p style="font-size:19px;margin-top:8px">The director picks per scene under rules: facts go to data and code, Veo at most twice, your instructions come first.</p></div>
+    <div class="card" style="padding:30px"><div class="num">02</div><h3 style="margin-top:16px;font-size:25px">Write and repair code</h3><p style="font-size:19px;margin-top:8px">Gemini writes the animation code; if it fails, the error goes back to Gemini until it runs.</p></div>
+    <div class="card" style="padding:30px"><div class="num">03</div><h3 style="margin-top:16px;font-size:25px">Look and fix</h3><p style="font-size:19px;margin-top:8px">Gemini looks at the rendered frames for overlapping or cut-off text and asks for a corrected scene.</p></div>
+    <div class="card" style="padding:30px"><div class="num">04</div><h3 style="margin-top:16px;font-size:25px">Listen and retake</h3><p style="font-size:19px;margin-top:8px">Every narration line is transcribed and recorded again if words were dropped, added or garbled.</p></div>
+    <div class="card" style="padding:30px"><div class="num">05</div><h3 style="margin-top:16px;font-size:25px">Stay consistent</h3><p style="font-size:19px;margin-top:8px">Reference images feed every AI picture and Veo clip, so people and objects look the same throughout.</p></div>
+    <div class="card" style="padding:30px"><div class="num">06</div><h3 style="margin-top:16px;font-size:25px">Review the finished video</h3><p style="font-size:19px;margin-top:8px">Gemini reviews every scene, and length, black or frozen frames, silence and loudness are measured. One click fixes a flagged scene.</p></div>
+    <div class="card" style="padding:30px"><div class="num">07</div><h3 style="margin-top:16px;font-size:25px">Check the facts</h3><p style="font-size:19px;margin-top:8px">Claims are checked against the sources and Google Search; wrong ones go back to the director with the evidence.</p></div>
+    <div class="card" style="padding:30px;background:var(--goodbg);border-color:transparent"><h3 style="font-size:25px;color:var(--good)">Never a broken video</h3><p style="font-size:19px;margin-top:8px">A refused Veo clip becomes a still, a failed scene becomes animated text, and a missing GPU voice becomes a Gemini voice.</p></div>
   </div>
-  <p style="margin-top:56px;font-size:24px">Misinformation angle: every number and map in a MitraField video is computed from data the user can see, not invented by a pixel model.</p>
   <div class="foot"><span>MitraField</span><span>10</span></div>
 </section>
 
-<!-- 11. feasibility -->
+<!-- 11. trust -->
 <section class="slide">
-  <p class="eyebrow">Feasibility and scale</p>
-  <h2 style="margin-top:20px">Built to run cheaply, and to grow.</h2>
-  <div class="card" style="margin-top:56px;overflow:hidden">
-    <table>
-      <tr><th style="width:360px">Area</th><th>Today</th><th>Next</th></tr>
-      <tr><td><b>Compute</b></td><td>API and worker on Cloud Run, Cloud Tasks queue, one beat per worker instance, Firestore state, content-hash cache</td><td>Autoscaled worker pools per tenant, render priority lanes</td></tr>
-      <tr><td><b>Cost control</b></td><td>Per-call ledger, $25/day and $5/video caps, Veo length fitted to the beat, draft mode on Veo Lite</td><td>Batch API for final renders, per-user budgets</td></tr>
-      <tr><td><b>Styles</b></td><td>Ten engines behind one contract, discovered automatically</td><td>Scale comparisons, source-quote cards, code walkthroughs, real archival footage</td></tr>
-      <tr><td><b>Learning</b></td><td>Audience and level steer the script</td><td>Learn mode: quizzes after the video, beats re-explained where viewers struggle, analytics in BigQuery</td></tr>
-      <tr><td><b>Languages</b></td><td>One-click translation that reuses the visuals</td><td>Cloud Translation glossaries, regional voices</td></tr>
-    </table>
+  <p class="eyebrow">Trust and safety <span class="crit">Responsible use of Gen AI</span></p>
+  <h2 style="margin-top:18px">Checked before you see it. <span class="soft">Provable after you share it.</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:20px;margin-top:46px">
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">Fact check</h3><p style="margin-top:10px;font-size:18px">Every number and claim, spoken or on screen, checked against your sources, then Google Search, with links to the evidence.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">Invisible watermark</h3><p style="margin-top:10px;font-size:18px">Every export carries a mark you cannot see. Anyone can upload a copy on the Verify page; it survives re-uploading, compression, resizing and trimming.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">AI labels</h3><p style="margin-top:10px;font-size:18px">Scenes with AI-generated pictures are labelled in the app. Veo and Nano Banana output also carries Google's own SynthID.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">No deepfakes</h3><p style="margin-top:10px;font-size:18px">Requests to put words in a real person's mouth are refused. Real people in picture prompts become anonymous stand-ins.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">Safe with uploads</h3><p style="margin-top:10px;font-size:18px">Uploaded PDFs and notes are treated as data. A note saying "ignore all previous instructions" was ignored while its real facts were used.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">Sandboxed code</h3><p style="margin-top:10px;font-size:18px">Code written by the model runs in a sandbox with no network access.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">Spending limits</h3><p style="margin-top:10px;font-size:18px">Every model call is priced and logged. Hard caps of $25 a day and $5 a video, a passcode on anything that spends, and a cheaper draft mode.</p></div>
+    <div class="card" style="padding:28px"><h3 style="font-size:24px">Private by default</h3><p style="margin-top:10px;font-size:18px">Uploaded sources and voice samples are never public. Videos sent to Verify are deleted right after they are checked.</p></div>
   </div>
-  <div class="foot"><span>MitraField</span><span>11</span></div>
+  <div class="foot"><span>MitraField · the watermark is classical spread-spectrum, not SynthID; it reports what it finds and never claims a video is not ours</span><span>11</span></div>
 </section>
 
-<!-- 12. close -->
+<!-- 12. architecture -->
+<section class="slide">
+  <p class="eyebrow">Built on Google Cloud <span class="crit">Technical merit · scalability</span></p>
+  <h2 style="margin-top:18px;font-size:56px">Everything runs on Google Cloud, and scales to zero when idle.</h2>
+  <div style="margin-top:44px;display:grid;grid-template-columns:1fr 50px 1.25fr 50px 1.1fr;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="box"><h4>Firebase Hosting</h4><p>Serves the web app worldwide from a CDN and passes API calls to Cloud Run</p></div>
+      <div class="box"><h4>Cloud Run · API</h4><p>Public and stateless. Checks the passcode and spending caps, saves projects, queues the work. Never renders.</p></div>
+    </div>
+    <div class="arrow">→</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="box" style="border-color:var(--ink)"><h4>Cloud Tasks</h4><p>A durable job queue: retries with backoff, rate limits, and jobs survive restarts and new releases</p></div>
+      <div class="box" style="border-color:var(--ink)"><h4>Cloud Run · worker (private)</h4><p>Writes, narrates and renders one scene per job, up to six at once; assembles, watermarks, runs the quality and fact checks</p></div>
+      <div class="box"><h4>Firestore · Cloud Storage · Secret Manager</h4><p>Project state with safe concurrent updates · videos and images · API and watermark keys</p></div>
+    </div>
+    <div class="arrow">→</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="box" style="padding:14px 20px"><h4 style="font-size:20px">Gemini API</h4><p style="font-size:15px">Gemini, Nano Banana, Veo, TTS, Lyria, Google Search grounding</p></div>
+      <div class="box" style="padding:14px 20px"><h4 style="font-size:20px">Cloud Run GPU (NVIDIA L4)</h4><p style="font-size:15px">Cloned-voice narration; private, off when idle</p></div>
+      <div class="box" style="padding:14px 20px"><h4 style="font-size:20px">Cloud Build · Artifact Registry</h4><p style="font-size:15px">Container builds and images</p></div>
+      <div class="box" style="padding:14px 20px"><h4 style="font-size:20px">Cloud Billing budget</h4><p style="font-size:15px">Alert on top of the in-app caps</p></div>
+    </div>
+  </div>
+  <p style="margin-top:30px;font-size:21px">Each service has its own minimal-permission account; the public API cannot call models or render, and only the worker can read the Gemini key.</p>
+  <div class="foot"><span>MitraField · region asia-southeast1 (Singapore)</span><span>12</span></div>
+</section>
+
+<!-- 13. scale and sustainability -->
+<section class="slide">
+  <p class="eyebrow">Scalability and sustainability <span class="crit">Technical merit</span></p>
+  <h2 style="margin-top:18px">Cheap to run, ready to grow.</h2>
+  <div class="card" style="margin-top:52px;overflow:hidden">
+    <table class="roomy">
+      <tr><th style="width:330px">Area</th><th>How it works today</th><th style="width:560px">Next</th></tr>
+      <tr><td><b>Scale</b></td><td>The API and the worker scale on Cloud Run from zero to many instances; the queue spreads scenes across workers, six at a time by default</td><td>Raise the worker limit and the queue rate; one setting each</td></tr>
+      <tr><td><b>Cost when idle</b></td><td>Every service, including the GPU, scales to zero; idle cost is storage only</td><td>Keep one warm GPU only during busy hours</td></tr>
+      <tr><td><b>Cost per video</b></td><td>About $0.80 to $2.80 in model calls in our runs, shown in the app scene by scene; editing re-renders only the changed scenes</td><td>Batch pricing for final renders, per-user budgets</td></tr>
+      <tr><td><b>Reliability</b></td><td>126 automated tests on every change; releases go out as a test copy first and only go live after a real check (database, a model call, the watermark and the GPU voice)</td><td>Load tests and per-tenant queues</td></tr>
+      <tr><td><b>Extending</b></td><td>A new kind of visual is one file; the director discovers it automatically</td><td>Quote cards, code walkthroughs, archival footage</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>MitraField · releases from GitHub with keyless sign-in to Google Cloud (Workload Identity Federation)</span><span>13</span></div>
+</section>
+
+<!-- 14. user experience -->
+<section class="slide">
+  <p class="eyebrow">User experience <span class="crit">Usability and accessibility</span></p>
+  <h2 style="margin-top:18px">Simple for a teacher. <span class="soft">Deep control when you want it.</span></h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:56px;margin-top:40px">
+    <ul class="ticks">
+      <li><b style="color:var(--ink)">One next step on every screen:</b> Write storyboard, Render video, Update video, Download.</li>
+      <li><b style="color:var(--ink)">You approve before anything is spent:</b> the storyboard comes first, rendering second.</li>
+      <li><b style="color:var(--ink)">Edit in plain words:</b> "simpler for a 12-year-old", "show it on a map". Only that scene changes.</li>
+      <li><b style="color:var(--ink)">Instructions for the whole video:</b> e.g. "only math animations, no AI images".</li>
+    </ul>
+    <ul class="ticks">
+      <li><b style="color:var(--ink)">Accessible output:</b> subtitles with every video, loudness set for streaming, nine narration languages.</li>
+      <li><b style="color:var(--ink)">Landscape or vertical Short</b> from the same workspace.</li>
+      <li><b style="color:var(--ink)">Honest by design:</b> AI pictures labelled, cost shown per video, quality and fact checks visible.</li>
+      <li><b style="color:var(--ink)">Works on a phone</b>, and respects reduced-motion settings.</li>
+    </ul>
+  </div>
+  <div style="position:absolute;left:120px;right:120px;bottom:92px;display:grid;grid-template-columns:1fr 250px;gap:40px;align-items:end">
+    <div style="height:340px;overflow:hidden;border-radius:18px;position:relative" class="frame"><img src="img/ui_new.png" style="width:100%;display:block;position:absolute;bottom:0">
+      <span class="pill" style="position:absolute;left:18px;top:16px;background:#fff;border:1px solid var(--line);font-size:15px">The one action stays in view however long the form is</span></div>
+    <div style="height:340px;overflow:hidden;border-radius:18px" class="frame"><img src="img/ui_phone.png" style="width:100%;display:block"></div>
+  </div>
+  <div class="foot"><span>MitraField</span><span>14</span></div>
+</section>
+
+<!-- 15. results -->
+<section class="slide">
+  <p class="eyebrow">Results from the prototype</p>
+  <h2 style="margin-top:18px">Finished explainers, each from a single prompt.</h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:48px;gap:24px">
+    <div class="card" style="padding:34px"><div class="big">12</div><p style="margin-top:14px;font-size:20px">finished videos: geography, math, biology, history, technology, acoustics, earth science</p></div>
+    <div class="card" style="padding:34px"><div class="big">3</div><p style="margin-top:14px;font-size:20px">languages so far (English, Hindi, Nepali), 3 looks, landscape and a vertical Short</p></div>
+    <div class="card" style="padding:34px"><div class="big">62%</div><p style="margin-top:14px;font-size:20px">of 116 scenes drawn from data and code, so their facts were computed, not generated</p></div>
+    <div class="card" style="padding:34px"><div class="big" style="font-size:72px">4–9 min</div><p style="margin-top:14px;font-size:20px">to render a one-minute video, unattended, with no manual edits</p></div>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:28px;gap:20px">
+    <div><img class="shot" src="img/res_tsunami.jpg" style="height:250px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Woodblock look · how a tsunami forms · $1.18</p></div>
+    <div><img class="shot" src="img/res_vaccine.jpg" style="height:250px;object-fit:cover;object-position:center 30%"><p style="font-size:18px;margin-top:8px">Vertical Short · vaccines, with a recurring presenter</p></div>
+    <div><img class="shot" src="img/res_hindi.jpg" style="height:250px;object-fit:cover"><p style="font-size:18px;margin-top:8px">Hindi version · labels redrawn in Devanagari, same cloned voice</p></div>
+  </div>
+  <div class="foot"><span>MitraField · costs from Google's published Gemini API rates, logged per call by the app</span><span>15</span></div>
+</section>
+
+<!-- 16. differentiation -->
+<section class="slide">
+  <p class="eyebrow">What is different <span class="crit">Originality</span></p>
+  <h2 style="margin-top:18px">Beautiful is easy. <span class="soft">Correct is the product.</span></h2>
+  <div class="card" style="margin-top:44px;overflow:hidden">
+    <table>
+      <tr><th style="width:420px"></th><th>Text-to-video tools</th><th>MitraField</th></tr>
+      <tr><td><b>Numbers on screen</b></td><td class="no">Drawn by an image model, often wrong</td><td class="yes">Computed and typeset by code</td></tr>
+      <tr><td><b>Maps</b></td><td class="no">Approximate coastlines, invented borders</td><td class="yes">Real border data, exact places</td></tr>
+      <tr><td><b>Math and graphs</b></td><td class="no">Pretty squiggles</td><td class="yes">Real animation of the actual function</td></tr>
+      <tr><td><b>Length</b></td><td class="no">A few seconds per clip</td><td class="yes">Full narrated explainers, 1 to 6 minutes</td></tr>
+      <tr><td><b>Changing one moment</b></td><td class="no">Generate the whole clip again</td><td class="yes">Edit or redo a single scene</td></tr>
+      <tr><td><b>Narrator</b></td><td class="no">A stock voice, or none</td><td class="yes">Your own cloned voice</td></tr>
+      <tr><td><b>Languages</b></td><td class="no">Prompt again and hope</td><td class="yes">Same visuals, new narration, one click</td></tr>
+      <tr><td><b>Checking and proof</b></td><td class="no">None</td><td class="yes">Fact check, quality check, invisible watermark</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>MitraField</span><span>16</span></div>
+</section>
+
+<!-- 17. limits and next -->
+<section class="slide">
+  <p class="eyebrow">Honest limits, and what is next</p>
+  <h2 style="margin-top:18px">What we would build next.</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:28px;margin-top:60px">
+    <div class="card" style="padding:48px">
+      <h3>Limits today</h3>
+      <ul class="ticks" style="margin-top:20px">
+        <li>No user accounts yet: browsing is public, creating needs a shared passcode.</li>
+        <li>The first cloned-voice line after a quiet period waits 20 to 45 seconds while the GPU starts.</li>
+        <li>Fact checks greatly reduce errors but cannot promise every claim is right; flagged claims are shown, not hidden.</li>
+        <li>Heavy cropping or deliberate editing can remove the watermark.</li>
+      </ul>
+    </div>
+    <div class="card" style="padding:48px">
+      <h3>Next</h3>
+      <ul class="ticks" style="margin-top:20px">
+        <li>Sign-in with Firebase Authentication and private workspaces for schools and teams.</li>
+        <li>Learn mode: a short quiz after each video, with results in BigQuery to show where learners struggle.</li>
+        <li>More languages and regional voices, with glossaries for subject terms.</li>
+        <li>Publishing straight to YouTube and learning platforms.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>MitraField</span><span>17</span></div>
+</section>
+
+<!-- 18. close -->
 <section class="slide" style="padding:0">
   <img class="art" src="img/dusk.webp">
-  <div style="position:absolute;left:64px;right:64px;bottom:64px;background:rgba(255,255,255,.88);border-radius:36px;padding:72px 88px;display:flex;justify-content:space-between;align-items:flex-end">
+  <div style="position:absolute;left:64px;right:64px;bottom:64px;background:rgba(255,255,255,.9);border-radius:36px;padding:68px 88px;display:flex;justify-content:space-between;align-items:flex-end">
     <div>
       <div class="logo"><img class="mark" src="img/logo.png" alt="">mitrafield</div>
-      <h2 style="margin-top:36px">What should we explain?</h2>
-      <p style="margin-top:16px;font-size:26px">Live: <b>mitrafield-aibc26.web.app</b></p>
+      <h2 style="margin-top:32px">What should we explain?</h2>
+      <p style="margin-top:18px;font-size:25px;line-height:1.7">Try it: <b style="color:var(--ink)">mitrafield-aibc26.web.app</b><br>Browse the examples freely; creating a video needs the passcode in our submission.</p>
     </div>
-    <div style="text-align:right;font-size:24px;line-height:1.7;color:var(--body)">
-      <div>github.com/VirajSawad1021/MitraField</div>
+    <div style="text-align:right;font-size:23px;line-height:1.7;color:var(--body)">
+      <div>Code: github.com/VirajSawad1021/MitraField</div>
+      <div>Demo video: docs/demo-video in the repository</div>
       <div>Viraj Sawad · Gaurav Giri · The Mitra Team</div>
-      <div>AI Builder Cup 2026</div>
+      <div>Google Cloud AI Builder Cup 2026</div>
     </div>
   </div>
 </section>
