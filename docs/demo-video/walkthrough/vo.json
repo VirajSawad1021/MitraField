@@ -1,0 +1,42 @@
+{
+ "v1": {
+  "text": "This is Meetra Field. You ask a question, and it makes a finished explainer video. Let me show you, live.",
+  "dur": 6.89
+ },
+ "v2": {
+  "text": "I'll ask why the Dead Sea is so salty. In Direction, I tell it: mostly maps and data charts, and at most one video shot. Then I pick a look.",
+  "dur": 9.14
+ },
+ "v3": {
+  "text": "A Gemini director writes the story beat by beat, and sends each beat to the engine that can show it truthfully. It followed my direction: charts, real maps, and just one generated video shot.",
+  "dur": 13.1
+ },
+ "v4": {
+  "text": "Before anything renders, a fact-check agent checks every claim against Google Search. Fourteen claims, all supported, with the sources listed.",
+  "dur": 9.68
+ },
+ "v5": {
+  "text": "Any beat can be changed in plain words. I ask the director to make this one simpler, and only that beat is redrawn.",
+  "dur": 7.46
+ },
+ "v6": {
+  "text": "Then I render. The beats render in parallel on Cloud Run, narrated, with music and subtitles.",
+  "dur": 6.11
+ },
+ "v7": {
+  "text": "Every finished video checks itself. Gemini reviews each beat, ffmpeg checks the picture and sound, and a flagged beat can be fixed in one click.",
+  "dur": 10.23
+ },
+ "v8": {
+  "text": "The facts are checked again with the final numbers on screen. Here it caught one claim about Lake Lisan, with the evidence and a correction ready to apply.",
+  "dur": 10.52
+ },
+ "v9": {
+  "text": "And here is the result.",
+  "dur": 1.18
+ },
+ "v10": {
+  "text": "Exact where it matters, and checked before you see it. Built on Gemini, Nano Banana, Google's video model and Cloud Run.",
+  "dur": 8.48
+ }
+}
