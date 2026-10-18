@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { FileText, Play, StickyNote, Upload, X } from "lucide-react";
-import { Card, Eyebrow, inputCls } from "@/components/ui";
-import { api, type Meta, type Project } from "@/lib/api";
+import { Button, Card, Eyebrow, inputCls } from "@/components/ui";
+import { api, MAX_INSTRUCTIONS, type Meta, type Project } from "@/lib/api";
 import { engineStyle } from "@/lib/engines";
 import { LookPicker } from "@/components/LookPicker";
 import { CostCard } from "./CostCard";
 
 export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; setP: (p: Project) => void; onWatch: () => void }) {
   const [note, setNote] = useState("");
+  const [dir, setDir] = useState(p.instructions ?? "");
+  const [saving, setSaving] = useState(false);
+  const dirty = dir.trim() !== (p.instructions ?? "");
   const counts = p.scenes.reduce<Record<string, number>>((a, s) => ({ ...a, [s.engine]: (a[s.engine] || 0) + 1 }), {});
   const exact = p.scenes.filter((s) => engineStyle(s.engine).kind === "exact").length;
   const max = Math.max(1, ...Object.values(counts));
@@ -72,6 +75,17 @@ export function Overview({ p, meta, setP, onWatch }: { p: Project; meta: Meta; s
       </Card>
 
       <CostCard p={p} />
+
+      <Card className="p-4">
+        <Eyebrow>Direction</Eyebrow>
+        <textarea value={dir} onChange={(e) => setDir(e.target.value)} rows={3} maxLength={MAX_INSTRUCTIONS}
+          placeholder="Optional. e.g. Use only manim animations. No generated images or video." className={`${inputCls} mt-2 resize-none text-[13px]`} />
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="text-[11px] leading-snug text-muted">The director follows this when it writes or rewrites the storyboard. Re-direct to apply it to every beat.</p>
+          <Button size="sm" disabled={!dirty} loading={saving}
+            onClick={async () => { setSaving(true); try { setP(await api.patch(p.id, { instructions: dir.trim() })); } finally { setSaving(false); } }}>Save</Button>
+        </div>
+      </Card>
 
       <Card className="p-4">
         <Eyebrow>Sources</Eyebrow>

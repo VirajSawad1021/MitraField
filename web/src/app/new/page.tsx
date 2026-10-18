@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, FileText, Monitor, Smartphone, Upload, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Eyebrow, Field, Segmented, inputCls } from "@/components/ui";
-import { api, type Meta } from "@/lib/api";
+import { api, MAX_INSTRUCTIONS, type Meta } from "@/lib/api";
 import { CreateVoiceLink, VoiceSelect } from "@/components/VoiceSelect";
 import { LookPicker } from "@/components/LookPicker";
 
@@ -15,6 +15,11 @@ const EXAMPLES = [
   "How does a vaccine teach your body to fight a virus?",
   "Why the Strait of Hormuz matters to the whole world",
   "How does GPS know exactly where you are?",
+];
+const DIRECTIONS = [
+  "Use only manim animations. No generated images or video.",
+  "Text and typography only: title cards, no images or video.",
+  "Charts, diagrams and whiteboard sketches only.",
 ];
 const LANGS = ["English", "Hindi", "Nepali", "Japanese", "Indonesian", "Korean", "Spanish", "Tamil", "Vietnamese"];
 const AUDIENCES = ["curious general audience", "school students (age 12-15)", "university students", "busy professionals"];
@@ -34,6 +39,7 @@ function NewVideo() {
   const q = useSearchParams();
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [aspect, setAspect] = useState<"16:9" | "9:16">(q.get("aspect") === "9:16" ? "9:16" : "16:9");
   const [length, setLength] = useState<"short" | "medium" | "long">(q.get("aspect") === "9:16" ? "short" : "medium");
@@ -52,7 +58,7 @@ function NewVideo() {
     setBusy(true);
     setErr(null);
     try {
-      const p = await api.create({ topic, notes, aspect, length, language, audience, ...(voice ? { voice } : {}), look });
+      const p = await api.create({ topic, notes, instructions: instructions.trim(), aspect, length, language, audience, ...(voice ? { voice } : {}), look });
       for (const f of files) await api.addFile(p.id, f);
       await api.storyboard(p.id);
       router.push(`/studio?p=${p.id}`);
@@ -106,6 +112,18 @@ function NewVideo() {
               <input list="aud" value={audience} onChange={(e) => setAudience(e.target.value)} className={inputCls} />
               <datalist id="aud">{AUDIENCES.map((a) => <option key={a} value={a} />)}</datalist>
             </Field>
+          </div>
+
+          <div className="mt-6 border-t border-line pt-5">
+            <p className="text-[12px] font-semibold">Direction <span className="font-normal text-muted">(optional)</span></p>
+            <p className="mb-3 mt-0.5 text-[11px] text-muted">Tell the director how to make it, in your own words. It follows this over its defaults, for example to use only manim or only text.</p>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={3} maxLength={MAX_INSTRUCTIONS}
+              placeholder="e.g. Use only manim animations. No generated images or video." className={`${inputCls} resize-none text-[13px]`} />
+            <div className="mt-2 flex flex-wrap gap-2">
+              {DIRECTIONS.map((x) => (
+                <button key={x} type="button" onClick={() => setInstructions(x)} className="rounded-full border border-line px-3 py-1 text-[12px] text-body transition-colors hover:border-line-strong hover:text-ink">{x}</button>
+              ))}
+            </div>
           </div>
 
           {meta?.looks && (

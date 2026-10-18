@@ -49,6 +49,13 @@ Cast & sets (visual consistency across the whole video):
   adults (a presenter, an expert, or the historical person the story follows), never mascots or children.
 - Each scene lists the names of the cast items visible in it (generative engines only; empty for exact engines).
 
+- If no beat uses a generative engine, return an empty cast: there is nothing to keep consistent.
+
+Creative direction from the user, when given, comes in the prompt under "Direction from the user". It is
+binding and overrides the routing preferences above (including the limit on veo and the advice to vary
+engines). When it limits which engines or media to use (e.g. only manim, text only, no generated video or
+images), use only what it allows, for every beat. Facts, the output schema and the rules on narration still apply.
+
 Engines:
 {engines}
 """
@@ -88,6 +95,12 @@ def source_parts(p: Project):
     return parts, "\n\n".join(notes)
 
 
+def direction(p: Project) -> str:
+    """The person's optional free-text instructions as a prompt section (empty when they gave none)."""
+    text = p.instructions.strip()
+    return f"\nDirection from the user (binding):\n{text}\n" if text else ""
+
+
 def storyboard(p: Project) -> Project:
     schema = {**BOARD_SCHEMA}
     schema["properties"]["scenes"]["items"]["properties"]["engine"]["enum"] = list(engines.REGISTRY)
@@ -97,6 +110,7 @@ def storyboard(p: Project) -> Project:
     prompt = (f"Topic: {p.topic}\nAudience: {p.audience}\nNarration language: {p.language}\n"
               f"Chosen look: {lk['label']}: {lk['image']}\n"
               f"Format: {p.aspect} ({'vertical Short' if p.aspect == '9:16' else 'landscape video'}), length {LENGTHS[p.length]}.\n"
+              + direction(p)
               + (f"\nSource notes from the user:\n{notes}\n" if notes else "")
               + ("\nAttached files are sources too.\n" if parts else "")
               + "\nWrite the storyboard.")
@@ -119,7 +133,7 @@ def rewrite_scene(p: Project, scene: Scene, instruction: str) -> Scene:
                                                "brief": {"type": "string"}},
               "required": ["narration", "engine", "brief"]}
     prompt = (f"Storyboard so far:\n{ctx}\n\nRewrite this scene:\n[{scene.engine}] {scene.narration}\nBrief: {scene.brief}\n\n"
-              f"Instruction from the user: {instruction}\nKeep it consistent with the scenes around it.")
+              f"{direction(p)}Instruction from the user for this scene: {instruction}\nKeep it consistent with the scenes around it.")
     r = gemini.json_call(prompt, schema=schema, model=config.MODEL_DIRECTOR, system=SYSTEM.format(engines=engine_menu()))
     scene.narration, scene.engine, scene.brief = r["narration"].replace("—", ", "), r["engine"], r["brief"]
     scene.params = {}

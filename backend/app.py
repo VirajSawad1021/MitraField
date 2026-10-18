@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, Requ
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import cast, config, costs, engines, jobs, log, pipeline, store, tasks, tts, voices  # noqa: F401  (tasks registers the handlers)
 from .models import CastItem, Project, Scene, Source
@@ -185,12 +185,14 @@ class NewProject(BaseModel):
     voice: str = ""   # empty = the deployment's default voice
     look: str = "cinematic"
     notes: str = ""
+    instructions: str = Field("", max_length=config.MAX_INSTRUCTIONS)
 
 
 @api.post("/api/projects")
 def create(body: NewProject):
     p = Project(title=body.topic[:60] or "Untitled", topic=body.topic, audience=body.audience, language=body.language,
-                aspect=body.aspect, length=body.length, voice=body.voice or tts.default_voice(), look=body.look)
+                aspect=body.aspect, length=body.length, voice=body.voice or tts.default_voice(), look=body.look,
+                instructions=body.instructions.strip())
     if body.notes.strip():
         p.sources.append(Source(kind="note", name="Notes", text=body.notes))
     store.save(p)
@@ -213,7 +215,9 @@ def read(pid: str):
 
 @api.patch("/api/projects/{pid}")
 def update(pid: str, body: dict):
-    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace", "quality", "look"}
+    allowed = {"title", "topic", "audience", "language", "aspect", "length", "voice", "music", "pace", "quality", "look", "instructions"}
+    if len(str(body.get("instructions", ""))) > config.MAX_INSTRUCTIONS:
+        raise HTTPException(422, f"Instructions are limited to {config.MAX_INSTRUCTIONS} characters.")
     old = get(pid)
     p = store.mutate(pid, lambda p: [setattr(p, k, v) for k, v in body.items() if k in allowed])
     if "look" in body and body["look"] != old.look and p.cast:
