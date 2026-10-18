@@ -17,7 +17,8 @@ TOKENS = {   # per 1M tokens: (input, output incl. thinking)
 }
 IMAGE = {"gemini-3.1-flash-image": 0.067, "gemini-3-pro-image": 0.134}   # per 1K image
 VEO_PER_SECOND = {"veo-3.1-generate-preview": 0.40, "veo-3.1-fast-generate-preview": 0.10,
-                  "veo-3.1-lite-generate-preview": 0.05}                    # 720p
+                  "veo-3.1-lite-generate-preview": 0.05,
+                  "veo-3.1-generate-001": 0.40, "veo-3.1-fast-generate-001": 0.10, "veo-3.1-lite-generate-001": 0.05}   # Vertex ids                    # 720p
 TTS_PER_SECOND = 0.000225          # gemini-3.8-flash-tts audio output
 MUSIC_PER_CLIP = 0.04              # Lyria 3 clip
 
