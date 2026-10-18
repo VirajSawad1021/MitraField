@@ -30,7 +30,7 @@ Built for the **Google Cloud AI Builder Cup 2026** · Theme: **Media, Content & 
 | 3 | Narrate | Gemini TTS | Each line is voiced first, so its visual renders to the exact length; every line is transcribed and retaken if it drifts |
 | 4 | Render + self-check | Engines | Beats render in parallel. Manim code is repaired from tracebacks and inspected by Gemini vision for overlapping text |
 | 5 | Edit one beat | You + director | Change a line, swap an engine, toggle cast, or say "show it on a map". Only that beat re-renders |
-| 6 | Assemble + translate | Lyria, ffmpeg | Topic-matched music ducked under the voice, -14 LUFS, subtitles; one-click language versions reuse the visuals |
+| 6 | Assemble + translate | Lyria, ffmpeg | Topic-matched music ducked under the voice, -14 LUFS, subtitles; one-click language versions reuse the visuals. Every export carries an invisible watermark; the Verify page checks any video for it |
 
 ## Eleven engines
 

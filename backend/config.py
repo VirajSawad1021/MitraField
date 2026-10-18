@@ -65,6 +65,10 @@ MODEL_MUSIC = env("STUDIO_MODEL_MUSIC", "lyria-3-clip-preview")
 MANIM_PY = env("STUDIO_MANIM_PY", sys.executable)
 OMNI_URL = env("STUDIO_OMNI_URL").rstrip("/")   # OmniVoice GPU service (see voice/); empty = Gemini voices only
 MAX_VOICES = int(env("STUDIO_MAX_VOICES", "20"))
+WATERMARK_KEY = env("STUDIO_WATERMARK_KEY")   # secret that keys the invisible watermark (worker only; see provenance.py)
+VERIFY_MAX_MB = 300          # largest video the Verify page accepts
+VERIFY_CHUNK_MB = 8          # uploads arrive in pieces: Cloud Run caps one request body at 32 MiB
+VERIFY_DAY_CAP = int(env("STUDIO_VERIFY_DAY_CAP", "300"))   # checks per day, across all visitors
 MAX_INSTRUCTIONS = 2000   # characters of optional direction a person may give the director
 
 FPS = 30

@@ -114,6 +114,16 @@ gcloud secrets versions list gemini-api-key --limit=1 --format='value(name)' | g
   || echo "No Gemini API key stored; re-run with GEMINI_API_KEY=... (not needed with STUDIO_VERTEX=1)."
 gcloud secrets add-iam-policy-binding gemini-api-key --member="serviceAccount:$WORKER_SA" --role=roles/secretmanager.secretAccessor >/dev/null
 
+echo "== watermark key secret (worker only; losing it makes older exports unverifiable, so never delete versions)"
+gcloud secrets describe watermark-key >/dev/null 2>&1 || gcloud secrets create watermark-key --replication-policy=automatic
+gcloud secrets versions list watermark-key --limit=1 --format='value(name)' | grep -q . \
+  || { openssl rand -hex 32 | tr -d '\n' | gcloud secrets versions add watermark-key --data-file=- >/dev/null; }
+gcloud secrets add-iam-policy-binding watermark-key --member="serviceAccount:$WORKER_SA" --role=roles/secretmanager.secretAccessor >/dev/null
+
+echo "== delete unfinished Verify uploads after a day"
+LC="$(mktemp)"; printf '{"rule":[{"action":{"type":"Delete"},"condition":{"age":1,"matchesPrefix":["projects/verify/"]}}]}' > "$LC"
+gcloud storage buckets update "gs://$BUCKET" --lifecycle-file="$LC" >/dev/null; rm -f "$LC"
+
 echo "== Workload Identity Federation for $GITHUB_REPO"
 gcloud iam workload-identity-pools describe github --location=global >/dev/null 2>&1 \
   || gcloud iam workload-identity-pools create github --location=global --display-name="GitHub Actions"

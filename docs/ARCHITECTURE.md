@@ -128,6 +128,26 @@ process cannot execute a render even if asked, and the worker is not reachable f
 * **Infrastructure** is created by `deploy/bootstrap.sh`, idempotent and reviewable. (Terraform would be the next step
   if more environments appear.)
 
+## Provenance: watermark and Verify
+
+Every export is marked at assembly (`backend/provenance.py`): a keyed spread-spectrum pattern, weaker on dark flat areas
+and stronger on busy ones, carries a random 32-bit mark id plus a CRC in the picture. The export step re-encodes the
+video once (it was a stream copy) and records the mark, project, time and file hash in Firestore (`provenance`,
+`provenance_files`). The key is the `watermark-key` secret, mounted on the worker only; the worker selftest embeds and
+reads back a generated clip, so a missing key fails the deploy.
+
+The Verify page uploads a video in 8 MB pieces (one Cloud Run request body is capped at 32 MiB) to `verify/<id>/`, which
+`/files` never serves and a bucket lifecycle rule empties after a day. A `verify` job on the worker joins the pieces,
+reads the mark (searching for the start offset, so trimmed copies work), checks the registry, deletes the upload and writes
+a verdict: `exact` (the original file), `mark` (re-encoded or edited), or `none`. Checks are public, capped per day
+(`STUDIO_VERIFY_DAY_CAP`), and "none" is worded as "no mark found", never "not ours".
+
+What it survives (measured on real exports): re-encoding at crf 26 to 34, rescaling to 720p and 480p, a changed frame
+rate, a trimmed start. What defeats it: heavy crops or changed aspect ratio, a short clip that is both downscaled and
+heavily compressed, filters or denoising aimed at removing it. It is classical spread-spectrum watermarking, not a
+trained one like SynthID; Veo and Gemini outputs carry Google's own SynthID separately. Rotating `watermark-key` makes
+older exports unverifiable, so never delete its versions.
+
 ## Limits, stated honestly
 
 * A beat is one task and one Firestore transaction stream per project document. Hundreds of beats finishing in the

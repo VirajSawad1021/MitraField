@@ -3,9 +3,10 @@ runs them (jobs.run). Each is idempotent: re-running a finished job finds its re
 content-hash cache and does nothing.
 """
 import shutil
+import time
 from pathlib import Path
 
-from . import cast, config, costs, director, factcheck, guards, jobs, log, pipeline, qa, store, voices
+from . import cast, config, costs, director, factcheck, guards, jobs, log, pipeline, provenance, qa, store, voices
 from .errors import friendly_error
 from .models import new_id
 
@@ -46,6 +47,39 @@ def cast_generate(pid, cid):
 @jobs.task("voice_build")
 def voice_build(vid):
     voices.build(vid)
+
+
+@jobs.task("verify")
+def verify(vid, chunks, size):
+    """Check an uploaded video for our watermark. The upload arrives as numbered pieces in verify/<vid>/ (the API
+    cannot take one big request); it is joined, read, and deleted again whatever the outcome."""
+    d = config.DATA / "verify" / vid
+    try:
+        doc = store.doc_get("verifications", vid)
+    except FileNotFoundError:
+        return
+    try:
+        parts = [d / f"{i:05d}.part" for i in range(chunks)]
+        deadline = time.time() + 90   # the shared volume can take a moment to show files another instance wrote
+        while not (all(p.exists() for p in parts) and sum(p.stat().st_size for p in parts) == size):
+            if time.time() > deadline:
+                raise RuntimeError("upload incomplete")
+            time.sleep(2)
+        whole = d / "upload.bin"
+        with open(whole, "wb") as out:
+            for p in parts:
+                with open(p, "rb") as f:
+                    shutil.copyfileobj(f, out)
+        res = provenance.verify(whole)
+        doc.update(status="done", **res)
+    except Exception as e:
+        logger.warning("verify failed: %r", e, extra={"vid": vid})
+        doc.update(status="error", error="That file could not be read as a video." if "ffprobe" in repr(e) or "ffmpeg" in repr(e)
+                   else "The upload did not arrive in full. Please try again.")
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    doc["finished"] = time.time()
+    store.doc_put("verifications", vid, doc)
 
 
 @jobs.task("render_all")
