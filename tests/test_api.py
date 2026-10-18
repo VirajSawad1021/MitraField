@@ -102,3 +102,14 @@ def test_reading_a_stale_busy_project_fails_it_with_a_message(project):
     store.backend().put(project.id, doc)
     body = client.get(f"/api/projects/{project.id}").json()
     assert body["render_status"] == "error" and "Render video" in body["render_error"]
+
+
+def test_instructions_are_optional_stored_trimmed_and_capped(queued):
+    p = client.post("/api/projects", json={"topic": "x"}).json()
+    assert p["instructions"] == ""
+    p = client.post("/api/projects", json={"topic": "x", "instructions": "  only manim  "}).json()
+    assert p["instructions"] == "only manim"
+    assert client.patch(f"/api/projects/{p['id']}", json={"instructions": "text only"}).json()["instructions"] == "text only"
+    too_long = "a" * (config.MAX_INSTRUCTIONS + 1)
+    assert client.post("/api/projects", json={"topic": "x", "instructions": too_long}).status_code == 422
+    assert client.patch(f"/api/projects/{p['id']}", json={"instructions": too_long}).status_code == 422

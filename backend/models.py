@@ -69,6 +69,7 @@ class Project(BaseModel):
     title: str = "Untitled"
     topic: str = ""
     audience: str = "curious general audience"
+    instructions: str = ""   # optional free-text direction for the director ("only manim", "no AI video"...)
     language: str = "English"
     aspect: Literal["16:9", "9:16"] = "16:9"
     length: Literal["short", "medium", "long"] = "medium"

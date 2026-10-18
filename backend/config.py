@@ -65,6 +65,7 @@ MODEL_MUSIC = env("STUDIO_MODEL_MUSIC", "lyria-3-clip-preview")
 MANIM_PY = env("STUDIO_MANIM_PY", sys.executable)
 OMNI_URL = env("STUDIO_OMNI_URL").rstrip("/")   # OmniVoice GPU service (see voice/); empty = Gemini voices only
 MAX_VOICES = int(env("STUDIO_MAX_VOICES", "20"))
+MAX_INSTRUCTIONS = 2000   # characters of optional direction a person may give the director
 
 FPS = 30
 SIZES = {"16:9": (1920, 1080), "9:16": (1080, 1920)}

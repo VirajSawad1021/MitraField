@@ -10,9 +10,10 @@ export type Scene = {
 }
 export type Source = { id: string; kind: 'note' | 'file' | 'link'; name: string; text: string }
 export type Cost = { total: number; by_kind: Record<string, number>; calls: number }
+export const MAX_INSTRUCTIONS = 2000
 export type CostLine = { kind: string; model: string; calls: number; usd: number }
 export type Project = {
-  cost?: Cost; quality?: 'draft' | 'final'; look?: string
+  cost?: Cost; instructions?: string; quality?: 'draft' | 'final'; look?: string
   pace?: number
   id: string; title: string; topic: string; audience: string; language: string; aspect: '16:9' | '9:16'
   length: 'short' | 'medium' | 'long'; voice: string; music: boolean
