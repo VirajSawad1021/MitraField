@@ -2,7 +2,7 @@
 import math
 
 from .base import Engine
-from .kit import ACCENT, INK, MUTED, clean, ease_out, fit_size, ramp, render_frames, rgba, text, wrap
+from .kit import ACCENT, INK, MUTED, clean, ease_out, ramp, render_frames, rgba, text, wrap
 
 
 class TimelineEngine(Engine):

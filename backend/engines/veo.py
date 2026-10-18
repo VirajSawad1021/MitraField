@@ -1,8 +1,11 @@
 """Veo 3.1 hero shots. Expensive: the director uses it for at most 2 moments per video.
 Falls back to the image engine if generation fails or is filtered."""
-from .. import cast, config, gemini
+from .. import cast, config, costs, gemini, log
 from ..look import finish
 from .base import Engine
+
+
+logger = log.get("veo")
 
 
 class VeoEngine(Engine):
@@ -41,8 +44,10 @@ class VeoEngine(Engine):
             seconds = next((n for n in (4, 6, 8) if n * self.stretch_max >= duration), 8)
             model = config.MODEL_VEO_DRAFT if project.quality == "draft" else config.MODEL_VEO
             return gemini.video(prompt, out, aspect=project.aspect, seconds=seconds, image_path=first, model=model)
+        except costs.BudgetExceeded:
+            raise
         except Exception as e:
-            print(f"[veo] failed, falling back to image: {e}", flush=True)
+            logger.warning("veo failed, falling back to image: %s", e)
             from . import REGISTRY
             img = REGISTRY["image"]
             s2 = scene.model_copy(update={"params": {"style": "photo", "shots": [

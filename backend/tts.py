@@ -12,7 +12,7 @@ from pathlib import Path
 
 import requests
 
-from . import config, gemini
+from . import config, gemini, log
 from .media import duration
 
 # name -> (OmniVoice voice id, post filter). Johnny's filter is the approved "Lively" pass.
@@ -29,6 +29,7 @@ if not config.OMNI_URL:   # e.g. on Cloud Run, where the GPU voice server is not
 VOICES = list(OMNI_VOICES) + GEMINI_VOICES
 DEFAULT_VOICE = "Johnny" if OMNI_VOICES else "Charon"
 
+logger = log.get("tts")
 _omni_lock = threading.Lock()   # one request at a time: the GPU box is shared
 
 
@@ -89,9 +90,9 @@ def synth(text, out_wav, voice=DEFAULT_VOICE, pace=1.0, check=True, language="En
         try:
             heard = _heard(out_wav)
         except Exception as e:   # the check is a safety net, never a blocker
-            print(f"[tts] check skipped: {e}", flush=True)
+            logger.warning("transcript check skipped: %s", e)
             break
         if _matches(text, heard):
             break
-        print(f"[tts] retake {attempt + 1}: heard {heard[:120]!r}", flush=True)
+        logger.info("retake %d: heard %r", attempt + 1, heard[:120])
     return out_wav, duration(out_wav)

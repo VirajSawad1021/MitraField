@@ -4,11 +4,12 @@ import hashlib
 import json
 import re
 import shutil
-import traceback
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import config, costs, director, engines, gemini, jobs, media, store, tts
+from . import config, costs, engines, gemini, jobs, log, media, store, tts
+from .errors import friendly_error
+
+logger = log.get("pipeline")
 
 
 def h(*parts):
@@ -90,8 +91,10 @@ def render_scene(pid, sid, force=False):
                         raw = eng.render(s, p, dur, work)
                 else:
                     raw = eng.render(s, p, dur, work)
+        except costs.BudgetExceeded:
+            raise   # not an engine fault: stop, do not paper over it with a title card
         except Exception as e:
-            traceback.print_exc()
+            logger.exception("engine failed, using title card", extra={"pid": pid, "sid": sid, "engine": s.engine})
             err = f"{s.engine} failed ({str(e)[:300]}); showing a title card instead"
             fb = engines.get("title")
             s2 = s.model_copy(update={"params": fb.plan(s, p)})
@@ -101,27 +104,74 @@ def render_scene(pid, sid, force=False):
         th = media.thumb(final, sdir(pid, sid) / f"thumb_{rh}.jpg")
         set_scene(pid, sid, status="ready", clip=str(final), thumb=str(th), render_hash=rh, error=err)
     except Exception as e:
-        traceback.print_exc()
-        from .app import friendly_error
+        logger.exception("scene failed", extra={"pid": pid, "sid": sid})
         set_scene(pid, sid, status="error", error=friendly_error(e))
 
 
 @costs.tracked
-def render_all(pid, assemble_after=True):
+def render_all(pid):
+    """Orchestrator: make sure the cast exists, then fan out one job per beat. The last beat to
+    finish claims the assemble step (see maybe_assemble), so no job ever waits on another."""
     p = store.load(pid)
-    todo = [s.id for s in p.scenes]
 
     def mark(pp):
         for s in pp.scenes:
             s.status = "queued"
         pp.render_status = "rendering scenes"
+        pp.render_error = None
     store.mutate(pid, mark)
     from . import cast
     cast.ensure(pid)
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        list(ex.map(costs.bind(lambda sid: render_scene(pid, sid)), todo))
-    if assemble_after:
-        assemble(pid)
+    for s in p.scenes:
+        jobs.enqueue("render_scene", pid=pid, sid=s.id, then_assemble=True)
+
+
+def maybe_assemble(pid):
+    """Called after every beat of a full render. Exactly one caller wins the claim: the status flip is
+    a transaction, so concurrent workers cannot both assemble, and a retried job cannot assemble twice."""
+    won = []
+
+    def claim(p):
+        won.clear()
+        if p.render_status == "rendering scenes" and all(s.status in ("ready", "error") for s in p.scenes):
+            p.render_status = "assembling"
+            won.append(True)
+    store.mutate(pid, claim)
+    if won:
+        jobs.enqueue("assemble", pid=pid)
+
+
+STALE_AFTER_S = jobs.DISPATCH_DEADLINE_S + 300
+
+
+def reap_stale(pid, min_age=STALE_AFTER_S):
+    """A job that died mid-flight (instance killed, deadline passed) leaves its beat 'rendering' forever.
+    Anything busy and untouched for longer than a job can possibly run is failed with a clear message."""
+    import time
+    busy_scene, busy_project = {"queued", "rendering"}, {"directing", "rendering scenes", "assembling"}
+    p = store.load(pid)
+    if time.time() - p.updated < min_age:
+        return False
+    if not (p.render_status in busy_project or any(s.status in busy_scene for s in p.scenes)
+            or any(c.status == "generating" for c in p.cast)):
+        return False
+
+    def reset(pp):
+        for s in pp.scenes:
+            if s.status in busy_scene:
+                s.status = "ready" if s.clip and Path(s.clip).exists() and s.render_hash else "draft"
+        for c in pp.cast:
+            if c.status == "generating":
+                c.status = "pending"
+        if pp.render_status in busy_project:
+            was = pp.render_status
+            pp.render_status = "error"
+            pp.render_error = ("This took too long and was stopped while "
+                               f"{'being directed' if was == 'directing' else 'rendering'}. Press "
+                               f"{'Re-direct' if was == 'directing' else 'Render video'} to continue; finished beats are kept.")
+    store.mutate(pid, reset)
+    logger.warning("reaped stale project", extra={"pid": pid})
+    return True
 
 
 # ------------------------------------------------------------------ assembly
@@ -185,13 +235,13 @@ def assemble(pid):
                            f"loudnorm=I=-14:TP=-1.5:LRA=11",
                            "-t", f"{total:.3f}", "-ar", "48000", mix])
             except Exception as e:
-                print("music skipped:", e)
+                logger.warning("music skipped: %s", e, extra={"pid": p.id})
                 mix = None
         if not p.music or mix is None or not Path(mix).exists():
             mix = d / "mix.wav"
             media.run(["ffmpeg", "-y", "-v", "error", "-i", d / "voice.wav", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11",
                        "-ar", "48000", mix])
-        srt = write_srt(p, d / "subtitles.srt")
+        write_srt(p, d / "subtitles.srt")   # shipped beside the video as a sidecar file
         slug = re.sub(r"[^a-z0-9]+", "_", p.title.lower()).strip("_")[:50] or "video"
         final = d / f"{slug}.mp4"
         media.run(["ffmpeg", "-y", "-v", "error", "-i", d / "video.mp4", "-i", mix, "-map", "0:v", "-map", "1:a",
@@ -202,8 +252,9 @@ def assemble(pid):
         store.mutate(pid, done)
         return final
     except Exception as e:
-        traceback.print_exc()
+        logger.exception("assemble failed", extra={"pid": pid})
+        msg = friendly_error(e)
 
         def fail(pp):
-            pp.render_status, pp.render_error = "error", str(e)[:500]
+            pp.render_status, pp.render_error = "error", msg
         store.mutate(pid, fail)

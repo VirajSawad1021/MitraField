@@ -1,5 +1,5 @@
 """Project / scene data model (stored as JSON on disk)."""
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from pydantic import BaseModel, Field
 import uuid
 
@@ -20,9 +20,9 @@ class CastItem(BaseModel):
     kind: CastKind = "character"
     name: str
     description: str = ""
-    image: Optional[str] = None
+    image: str | None = None
     status: Literal["pending", "generating", "ready", "error"] = "pending"
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class Scene(BaseModel):
@@ -33,13 +33,13 @@ class Scene(BaseModel):
     params: dict[str, Any] = {}
     cast: list[str] = []                   # CastItem ids that appear in this beat
     status: SceneStatus = "draft"
-    duration: Optional[float] = None
-    audio: Optional[str] = None
-    clip: Optional[str] = None
-    thumb: Optional[str] = None
-    error: Optional[str] = None
-    narration_hash: Optional[str] = None   # audio is reused while narration+voice are unchanged
-    render_hash: Optional[str] = None      # clip is reused while engine+params+duration are unchanged
+    duration: float | None = None
+    audio: str | None = None
+    clip: str | None = None
+    thumb: str | None = None
+    error: str | None = None
+    narration_hash: str | None = None   # audio is reused while narration+voice are unchanged
+    render_hash: str | None = None      # clip is reused while engine+params+duration are unchanged
 
 
 class Source(BaseModel):
@@ -47,7 +47,7 @@ class Source(BaseModel):
     kind: Literal["note", "file", "link"] = "note"
     name: str = ""
     text: str = ""
-    path: Optional[str] = None
+    path: str | None = None
 
 
 class Project(BaseModel):
@@ -67,7 +67,7 @@ class Project(BaseModel):
     cast: list[CastItem] = []
     scenes: list[Scene] = []
     render_status: str = "idle"
-    render_path: Optional[str] = None
-    render_error: Optional[str] = None
+    render_path: str | None = None
+    render_error: str | None = None
     created: float = 0
     updated: float = 0
