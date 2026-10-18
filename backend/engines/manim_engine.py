@@ -3,7 +3,7 @@ are fed back for repair. Exact math, graphs, geometry, algorithms."""
 import re
 import subprocess
 
-from .. import config, gemini, media
+from .. import config, gemini, log, media, sandbox
 from .base import Engine
 
 PREAMBLE = '''from manim import *
@@ -62,6 +62,9 @@ def strip_code(s):
     return (m.group(1) if m else s).strip()
 
 
+logger = log.get("manim")
+
+
 class ManimEngine(Engine):
     name = "manim"
     label = "Math animation"
@@ -100,13 +103,16 @@ class ManimEngine(Engine):
         if project.aspect == "9:16":
             pre += "config.frame_width, config.frame_height = 8.0, 14.222\n"
         out_dir = out_dir.resolve()
+        refused = sandbox.check(code)
+        if refused:
+            return None, f"the sandbox refused this code: {refused}"
         src = out_dir / "beat.py"
         src.write_text(pre + "\n" + code + "\n")
         media_dir = out_dir / "media"
         try:
-            r = subprocess.run([config.MANIM_PY, "-m", "manim", "render", "-q", "l", "-r", f"{W},{H}", "--fps", str(config.FPS),
-                                "--disable_caching", "--media_dir", str(media_dir), "-o", "beat.mp4", str(src), "Beat"],
-                               capture_output=True, text=True, timeout=420, cwd=out_dir)
+            r = sandbox.run([config.MANIM_PY, "-m", "manim", "render", "-q", "l", "-r", f"{W},{H}", "--fps", str(config.FPS),
+                             "--disable_caching", "--media_dir", str(media_dir), "-o", "beat.mp4", str(src), "Beat"],
+                            cwd=out_dir, timeout=420)
         except subprocess.TimeoutExpired:
             return None, "render timed out after 420 s; simplify the animation (fewer objects, no per-frame updaters on many objects)"
         vids = list(media_dir.rglob("beat.mp4"))
@@ -140,12 +146,12 @@ class ManimEngine(Engine):
         for attempt in range(4):
             t0 = time.time()
             clip, err = self._render(code, project, out_dir)
-            print(f"[manim] attempt {attempt + 1}: {'ok' if clip else 'error'} in {time.time() - t0:.0f}s", flush=True)
+            logger.info("attempt %d: %s in %.0fs", attempt + 1, "ok" if clip else "error", time.time() - t0)
             if clip and not critiqued:
                 critiqued = True
                 try:
                     ok, problems = self._critique(clip, scene, duration)
-                    print(f"[manim] critique ok={ok} {problems[:120]}", flush=True)
+                    logger.info("critique ok=%s %s", ok, problems[:120])
                 except Exception:
                     ok, problems = True, ""
                 if not ok and problems:
