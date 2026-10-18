@@ -76,7 +76,8 @@ appears in the opening still and both Veo shots. Cast items are editable in the 
 | Hero video, image-to-video | Veo 3.1 (Fast; Lite in draft mode) |
 | Narration | Gemini TTS |
 | Music bed | Lyria |
-| Hosting | Cloud Run (API + render workers + web app), Cloud Storage (projects, media), Secret Manager, Cloud Build, Artifact Registry |
+| Models, in production | Vertex AI, as the worker's own service account (no API key in the container) |
+| Hosting | Cloud Run (public API service + private worker service), Cloud Tasks (durable render jobs), Firestore (project state), Cloud Storage (media), Firebase Hosting (static UI on a CDN), Secret Manager, Cloud Build, Artifact Registry |
 
 Every billable call is priced from Google's published rates and logged per project; the studio shows the
 running cost. A 50 s Short with two Veo shots costs about $2.
@@ -85,29 +86,52 @@ running cost. A 50 s Short with two Veo shots costs about $2.
 
 ```bash
 git clone https://github.com/VirajSawad1021/MitraField.git && cd MitraField
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 echo "GEMINI_API_KEY=..." > .env
 .venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8020     # API + built UI at http://localhost:8020
 cd web && npm ci && npm run dev                                   # UI hot-reload at :3000 (proxies /api to 8020)
 cd web && NODE_ENV=production npx next build                      # rebuild the static UI served by 8020
 ```
 
-Locally, narration can also use the channel's own OmniVoice clones (Johnny, Viraj v8) via `STUDIO_OMNI_URL`;
-deployments use Gemini TTS.
-
-## Deploy to Cloud Run
+Locally everything runs in one process (`STUDIO_ROLE=all`, JSON files, in-process job threads). Manim runs with the
+interpreter that has it installed; set `STUDIO_MANIM_PY` if yours lives elsewhere. Narration can also use the
+channel's own OmniVoice clones (Johnny, Viraj v8) via `STUDIO_OMNI_URL`; deployments use Gemini TTS.
 
 ```bash
-echo "STUDIO_PASSCODE=choose-one" >> .env      # public link: browsing is open, generating needs the passcode
-PROJECT=my-gcp-project ./deploy/cloudrun.sh   # APIs, bucket, secrets, Cloud Build, Cloud Run (asia-southeast1)
-PROJECT=my-gcp-project ./deploy/seed.sh 0846ab6934 a834483018   # copy demo projects into the bucket
+.venv/bin/ruff check .                                            # lint
+.venv/bin/pytest -q                                               # tests (file store, local queue)
+firebase emulators:exec --only firestore --project demo-mitrafield ".venv/bin/pytest -q"   # + the Firestore store tests
 ```
+
+## Deploy
+
+How it is built, why, and where its limits are: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+```bash
+# once: APIs, Firestore, bucket, queue, service accounts, secret, budget alert, GitHub trust (idempotent)
+PROJECT=my-gcp-project GITHUB_REPO=owner/repo BILLING_ACCOUNT=XXXXXX-XXXXXX-XXXXXX STUDIO_PASSCODE=choose-one ./deploy/bootstrap.sh
+# first deploy from a laptop (every later one is a push to main)
+PROJECT=my-gcp-project ./deploy/deploy.sh
+# copy finished local projects into the deployed app
+GOOGLE_CLOUD_PROJECT=my-gcp-project .venv/bin/python -m backend.seed 0846ab6934 a834483018
+```
+
+Every push to `main` runs CI (lint, tests incl. the Firestore emulator, web build, image build) and then deploys:
+the worker and the API each go out as a no-traffic canary, must pass a gate (a real model call and a Firestore round
+trip for the worker; readiness for the API), and only then receive traffic. Firebase Hosting is released last.
+Authentication is Workload Identity Federation, so no key is stored in GitHub.
 
 ## Layout
 
 ```
 backend/
-  app.py          FastAPI: projects, sources, scenes, cast, render, translate, passcode guard
+  app.py          FastAPI: projects, sources, scenes, cast, render, translate, passcode guard; STUDIO_ROLE api | worker | all
+  worker.py       private job endpoint (OIDC-verified) and the deploy gate's selftest
+  jobs.py         enqueue(): Cloud Tasks in production, threads locally
+  tasks.py        every background job, registered by name and idempotent
+  store.py        project state: Firestore (transactions) or files; spend counters
+  sandbox.py      static check, clean env and no-network for model-written Manim code
+  log.py          structured JSON logging for Cloud Logging
   director.py     storyboard + cast / rewrite one beat / translate (Gemini)
   cast.py         Cast & Sets: reference images and per-beat references
   pipeline.py     per-beat narrate -> plan -> render -> fit, assembly; content-hash cache
@@ -115,6 +139,8 @@ backend/
   gemini.py       one client for text, JSON, Nano Banana, TTS, Veo, Lyria (Vertex AI with STUDIO_VERTEX=1)
   engines/        title, globe, manim, chart, timeline, flow, whiteboard, image, character, veo
 web/              Next.js app: landing, demo, new video, projects, studio
-deploy/           Cloud Run deploy and demo seeding
+deploy/           bootstrap.sh (infrastructure), deploy.sh (gated canary deploy), cloudbuild.yaml
+.github/          CI and CD workflows
+tests/            unit, API, orchestration and Firestore-emulator tests
 docs/             spec, deck, demo video, screenshots
 ```
